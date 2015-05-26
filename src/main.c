@@ -4,10 +4,16 @@
 #include <stdlib.h>
 
 #define ROOT_PROCESS 0
+
+// thus tag can only be send by the root node
+#define ROOT_TAG_INIT_NODE 0
+
+//
+#define ACK_TAG 42
+
 #define SIZE_X 1000
 #define SIZE_Y 1000
 
-#define TAG_INIT_NODE 0
 
 #define max(a,b) \
    ({ __typeof__ (a) _a = (a); \
@@ -71,11 +77,11 @@ int **alloc_2d_int(int rows, int cols);
 float **alloc_2d_float(int rows, int cols);
 
 int main(int argc, char**argv) {
-  int nb_proc, com_rank,node_number ,buffer_int, i;
-  bool bootsrap = false;
+  int nb_proc, com_rank,node_number ,buffer_int, i, main_loop_tag, main_loop_from;
+  bool bootsrap = false, active = false;
   pair pair_id;
   land land_id;
-  MPI_Status status;
+  MPI_Status main_loop_status;
   MPI_Init (&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &nb_proc);
   MPI_Comm_rank(MPI_COMM_WORLD, &com_rank);
@@ -83,20 +89,31 @@ int main(int argc, char**argv) {
   srand((unsigned) time(NULL) + com_rank * nb_proc);
 
   if(com_rank == ROOT_PROCESS) {
-    for(i = 0 ; i < nb_proc; i++) {
+    for(i = 0; i < nb_proc; i++) {
       if(i != ROOT_PROCESS) {
-        MPI_Send(&i, 1, MPI_INT, i, TAG_INIT_NODE, MPI_COMM_WORLD);
+        MPI_Send(&i, 1, MPI_INT, i, ROOT_TAG_INIT_NODE, MPI_COMM_WORLD);
+        MPI_Recv(&buffer_int ,1 , MPI_INT, i, ACK_TAG, MPI_COMM_WORLD, &main_loop_status);
+        if(buffer_int == 0) {
+          printf("node %d well inserted \n", i);
+        }
       }
     }
   } else {
     get_random_id(&pair_id, SIZE_X, SIZE_Y);
-    while(1==1) {
-      MPI_Recv(&node_number,1 ,MPI_INT, ROOT_PROCESS, MPI_ANY_TAG, MPI_COMM_WORLD , &status);
-      if(bootsrap == false && node_number == 1 ) {
-        bootsrap = true;
-        init_land(&land_id, 0, 0, SIZE_X, SIZE_Y);
-      } else {
-        printf("recu %d avec tag : %d from %d \n", node_number, status.MPI_TAG, status.MPI_SOURCE);
+    while(1) {
+      MPI_Recv(&node_number ,1 , MPI_INT, ROOT_PROCESS, MPI_ANY_TAG, MPI_COMM_WORLD, &main_loop_status);
+      main_loop_from = main_loop_status.MPI_SOURCE;
+      main_loop_tag  = main_loop_status.MPI_TAG;
+      if(main_loop_tag == ROOT_TAG_INIT_NODE) {
+        //initialisation of bootsrap node
+        if(bootsrap == active && node_number == 1) {
+          bootsrap   = true;
+          buffer_int = 0;
+          init_land(&land_id, 0, 0, SIZE_X, SIZE_Y);
+          MPI_Send(&buffer_int ,1 ,MPI_INT ,ROOT_PROCESS ,ACK_TAG , MPI_COMM_WORLD);
+        } else {
+          printf("unknow tag");
+        }
       }
     }
   }
