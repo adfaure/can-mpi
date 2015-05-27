@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
+#include <sys/time.h>
 
 #define ROOT_PROCESS 0
 
@@ -89,6 +90,21 @@ int **alloc_2d_int(int rows, int cols);
  */
 float **alloc_2d_float(int rows, int cols);
 
+/**
+ *
+ */
+void CAN_Recv_localise(int *loc ,const pair *pair, int self_rank , int first_node ,MPI_Comm comm);
+
+/**
+ *
+ */
+void CAN_Recv_localise_timeout(int *loc ,const pair *pair, int self_rank , int first_node ,MPI_Comm comm, long long timeout);
+
+/**
+ *
+ */
+long long now();
+
 int main(int argc, char**argv) {
   int nb_proc, com_rank,node_number , i, corresp, localise;
   int main_loop_tag, main_loop_from, count, *main_loop_buffer_int = NULL, *send_int_buffer;
@@ -141,13 +157,15 @@ int main(int argc, char**argv) {
         }
       } else if(main_loop_tag == REQUEST_TO_JOIN) {
         if(main_loop_from == 0) {
-          printf("voir avec %d pour s'insérer \n", *main_loop_buffer_int);
           send_int_buffer = malloc(sizeof(int) * 3);
           send_int_buffer[0] = com_rank; send_int_buffer[1] = pair_id.x; send_int_buffer[2] = pair_id.y;
-          MPI_Send(&(send_int_buffer[0]), 3, MPI_INT, *main_loop_buffer_int, LOCALIZE, MPI_COMM_WORLD);
-          MPI_Recv(&localise, 1, MPI_INT, MPI_ANY_SOURCE, LOCALIZE_RESP, MPI_COMM_WORLD, &main_loop_status);
-          MPI_Send(&(send_int_buffer[0]), 3 , MPI_INT, localise, REQUEST_TO_JOIN, MPI_COMM_WORLD);
-          printf("négocier avec le noeud %d \n", localise);
+          CAN_Recv_localise_timeout(&localise, &pair_id, com_rank, *main_loop_buffer_int, MPI_COMM_WORLD, 1000);
+          if(localise == -1) {
+            printf("localise timeouted \n");
+          } else {
+            MPI_Send(&(send_int_buffer[0]), 3 , MPI_INT, localise, REQUEST_TO_JOIN, MPI_COMM_WORLD);
+            printf("négocier avec le noeud %d \n", localise);
+          }
           free(send_int_buffer); send_int_buffer = NULL;
         } else {
           printf("le noeud %d asked me to join \n", main_loop_buffer_int[0]);
@@ -170,6 +188,39 @@ int main(int argc, char**argv) {
 
   MPI_Finalize();
   return 0;
+}
+
+void CAN_Recv_localise(int *loc ,const pair *pair, int self_rank , int first_node ,MPI_Comm comm) {
+  MPI_Status status;
+  int *buffer = (int*) malloc(sizeof(int) * 3);
+  buffer[0] = self_rank;
+  buffer[1] = pair->x;
+  buffer[2] = pair->y;
+  MPI_Send(&(buffer[0]), 3, MPI_INT, first_node, LOCALIZE, comm);
+  MPI_Recv(loc, 1, MPI_INT, MPI_ANY_SOURCE, LOCALIZE_RESP, comm, &status);
+  free(buffer);
+}
+// int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag,
+    // MPI_Status *status)
+void CAN_Recv_localise_timeout(int *loc ,const pair *pair, int self_rank , int first_node ,MPI_Comm comm, long long timeout) {
+  int *buffer = (int*) malloc(sizeof(int) * 3), flag;
+  MPI_Status status;
+  unsigned long begin_time = 0, time_elapsed = 0;
+  buffer[0] = self_rank;
+  buffer[1] = pair->x;
+  buffer[2] = pair->y;
+  MPI_Send(&(buffer[0]), 3, MPI_INT, first_node, LOCALIZE, comm);
+  begin_time = now();
+  while(time_elapsed < timeout) {
+    MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, comm, &flag, &status);
+    if(flag) {
+      MPI_Recv(loc, 1, MPI_INT, MPI_ANY_SOURCE, LOCALIZE_RESP, comm, &status);
+      return;
+    }
+    time_elapsed = now() - begin_time;
+  }
+  *loc = -1;
+  free(buffer);
 }
 
 void get_random_id(pair *p, int min, int max) {
@@ -242,4 +293,13 @@ int **alloc_2d_int(int rows, int cols) {
         array[i] = &(data[cols*i]);
 
     return array;
+}
+
+long long now() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    unsigned long long millisecondsSinceEpoch =
+            (unsigned long long)(tv.tv_sec) * 1000 +
+            (unsigned long long)(tv.tv_usec) / 1000;
+    return millisecondsSinceEpoch;
 }
