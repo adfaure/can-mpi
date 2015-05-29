@@ -4,13 +4,15 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
+#define MAX_SIZE_BUFFER 100
+
 #define ROOT_PROCESS 0
 
 // thus tag can only be send by the root node
 #define ROOT_TAG_INIT_NODE 0
 
 //
-#define ACK_TAG 42
+#define ACK_TAG_BOOTSTRAP 42
 #define REQUEST_TO_JOIN 666
 #define NEGOCIATE_LAND  123
 #define LOCALIZE 321
@@ -107,7 +109,7 @@ long long now();
 
 int main(int argc, char**argv) {
   int nb_proc, com_rank,node_number , i, corresp, localise;
-  int main_loop_tag, main_loop_from, count, *main_loop_buffer_int = NULL, *send_int_buffer;
+  int main_loop_tag, main_loop_from, count, main_loop_buffer_int[MAX_SIZE_BUFFER], send_int_buffer[MAX_SIZE_BUFFER];
   bool bootstrap = false, active = false;
   pair pair_id, pair_join_request;
   land land_id, new_land;
@@ -120,53 +122,51 @@ int main(int argc, char**argv) {
   srand((unsigned) time(NULL) + com_rank * nb_proc);
 
   if(com_rank == ROOT_PROCESS) {
-    main_loop_buffer_int = (int*) malloc(sizeof(int));
     for(i = 0; i < nb_proc; i++) {
       if(i != ROOT_PROCESS) {
         MPI_Send(&i, 1, MPI_INT, i, ROOT_TAG_INIT_NODE, MPI_COMM_WORLD);
         MPI_Recv(&main_loop_buffer_int[0] ,1 , MPI_INT, i, MPI_ANY_TAG, MPI_COMM_WORLD, &main_loop_status);
         main_loop_from = main_loop_status.MPI_SOURCE;
         main_loop_tag  = main_loop_status.MPI_TAG;
-        if(main_loop_tag == ACK_TAG) {
+        if(main_loop_tag == ACK_TAG_BOOTSTRAP) {
           printf("bootstraping node did it well \n");
         } else if(main_loop_tag == REQUEST_TO_JOIN) {
-          *main_loop_buffer_int = 1;
+          main_loop_buffer_int[0] = i;
           MPI_Send(&main_loop_buffer_int[0] , 1, MPI_INT, i, REQUEST_TO_JOIN, MPI_COMM_WORLD );
         }
       }
     }
-    free(main_loop_buffer_int);
   } else {
     get_random_id(&pair_id, SIZE_X, SIZE_Y);
     while(1) {
       MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &main_loop_status);
-      MPI_Get_count (&main_loop_status, MPI_INT, &count);
       main_loop_from = main_loop_status.MPI_SOURCE;
       main_loop_tag  = main_loop_status.MPI_TAG;
-      main_loop_buffer_int = (int*) malloc(sizeof(int));
-      MPI_Recv(&main_loop_buffer_int[0] ,count , MPI_INT, main_loop_from, main_loop_tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
       if(main_loop_tag == ROOT_TAG_INIT_NODE) {
-        //initialisation of bootstrap node
+        MPI_Get_count (&main_loop_status, MPI_INT, &count);
+        MPI_Recv(&main_loop_buffer_int[0] ,count , MPI_INT, main_loop_from,
+          main_loop_tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         if(bootstrap == false && *main_loop_buffer_int == 1) {
           bootstrap   = true;
-          main_loop_buffer_int = 0;
+          main_loop_buffer_int [0] = 0;
           init_land(&land_id, 0, 0, SIZE_X, SIZE_Y);
-          MPI_Send(&main_loop_buffer_int ,1 ,MPI_INT ,ROOT_PROCESS ,ACK_TAG ,MPI_COMM_WORLD);
+          MPI_Send(&main_loop_buffer_int[0] ,1 ,MPI_INT ,ROOT_PROCESS ,ACK_TAG_BOOTSTRAP ,MPI_COMM_WORLD);
         } else {
-          MPI_Send(&main_loop_buffer_int ,1 ,MPI_INT ,ROOT_PROCESS ,REQUEST_TO_JOIN ,MPI_COMM_WORLD);
+          main_loop_buffer_int[0] = com_rank;
+          MPI_Send(&main_loop_buffer_int[0] ,1 ,MPI_INT ,ROOT_PROCESS ,REQUEST_TO_JOIN ,MPI_COMM_WORLD);
         }
       } else if(main_loop_tag == REQUEST_TO_JOIN) {
+        MPI_Get_count (&main_loop_status, MPI_INT, &count);
+        MPI_Recv(&main_loop_buffer_int[0] ,count , MPI_INT, main_loop_from,
+          main_loop_tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         if(main_loop_from == 0) {
-          send_int_buffer = malloc(sizeof(int) * 3);
           send_int_buffer[0] = com_rank; send_int_buffer[1] = pair_id.x; send_int_buffer[2] = pair_id.y;
           CAN_Recv_localise_timeout(&localise, &pair_id, com_rank, *main_loop_buffer_int, MPI_COMM_WORLD, 1000);
           if(localise == -1) {
             printf("localise timeouted \n");
           } else {
-            MPI_Send(&(send_int_buffer[0]), 3 , MPI_INT, localise, REQUEST_TO_JOIN, MPI_COMM_WORLD);
-            printf("négocier avec le noeud %d \n", localise);
+
           }
-          free(send_int_buffer); send_int_buffer = NULL;
         } else {
           printf("le noeud %d asked me to join \n", main_loop_buffer_int[0]);
         }
@@ -182,7 +182,6 @@ int main(int argc, char**argv) {
       } else   {
         printf("unknow tag \n");
       }
-    free(main_loop_buffer_int);
     }
   }
 
@@ -200,6 +199,11 @@ void CAN_Recv_localise(int *loc ,const pair *pair, int self_rank , int first_nod
   MPI_Recv(loc, 1, MPI_INT, MPI_ANY_SOURCE, LOCALIZE_RESP, comm, &status);
   free(buffer);
 }
+
+void CAN_Negociate_land(int *loc ,const pair *pair, int self_rank , int first_node ,MPI_Comm comm) {
+  printf("negociation betwen %d and %d", self_rank, first_node);
+}
+
 // int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag,
     // MPI_Status *status)
 void CAN_Recv_localise_timeout(int *loc ,const pair *pair, int self_rank , int first_node ,MPI_Comm comm, long long timeout) {
