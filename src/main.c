@@ -1,3 +1,4 @@
+
 #include <mpi.h>
 #include <stdio.h>
 #include <time.h>
@@ -5,21 +6,26 @@
 #include <sys/time.h>
 
 #define MAX_SIZE_BUFFER 100
+#define MAX_SIZE_NEIGHBOUR 100
 
 #define ROOT_PROCESS 0
 
 // thus tag can only be send by the root node
 #define ROOT_TAG_INIT_NODE 0
 
-//
 #define ACK_TAG_BOOTSTRAP 42
-#define REQUEST_TO_JOIN 666
-#define NEGOCIATE_LAND  123
-#define LOCALIZE 321
-#define LOCALIZE_RESP 13
+#define REQUEST_TO_JOIN   666
+#define NEGOCIATE_LAND    123
+#define LOCALIZE          321
+#define LOCALIZE_RESP     13
 
 #define SIZE_X 1000
 #define SIZE_Y 1000
+
+#define VOISIN_T 0 //top
+#define VOISIN_B 1 //bot
+#define VOISIN_L 2 //left
+#define VOISIN_R 3 //right
 
 #define max(a,b) \
    ({ __typeof__ (a) _a = (a); \
@@ -35,7 +41,39 @@ typedef struct _land {
   unsigned int size_x, size_y;
 } land;
 
+typedef struct _neighbour  {
+  int orientation; //
+  int x, y; // begin point top left
+  int size_x, size_y;
+} neighbour;
+
 typedef enum { false, true } bool;
+
+typedef struct _cell {
+  void *data;
+  cell *next;
+} cell;
+
+typedef struct _list {
+  int nb_elem;
+  unsigned element_size;
+  cell *first;
+} list;
+
+/**
+ * init a generique liste
+ */
+void init_list(list *l);
+
+/**
+ * add elem in a generique list
+ */
+void list_add_front(list *l, void *data );
+
+/**
+ * get elemnt i of the list return 0 if something wrong;
+ */
+int list_get_index(list *l,int i, void *data);
 
 /**
  * Get a pair with random value between [min, max]
@@ -109,8 +147,8 @@ long long now();
 
 int main(int argc, char**argv) {
   int nb_proc, com_rank,node_number , i, corresp, localise;
-  int main_loop_tag, main_loop_from, count, main_loop_buffer_int[MAX_SIZE_BUFFER], send_int_buffer[MAX_SIZE_BUFFER];
-  bool bootstrap = false, active = false;
+  int main_loop_tag, main_loop_from, count, main_loop_buffer_int[MAX_SIZE_BUFFER], send_int_buffer[MAX_SIZE_BUFFER], wait_array[2]; // wait_array on attend un message d'une source avec un tag
+  bool bootstrap = false, active = false, is_waiting = false;
   pair pair_id, pair_join_request;
   land land_id, new_land;
   MPI_Status main_loop_status;
@@ -306,4 +344,39 @@ long long now() {
             (unsigned long long)(tv.tv_sec) * 1000 +
             (unsigned long long)(tv.tv_usec) / 1000;
     return millisecondsSinceEpoch;
+}
+
+void init_neighbour(neighbour *n, int x, int y, int size_x, int size_y, int or) {
+  n->size_y = size_y;
+  n->size_x = size_x;
+  n->x = x;
+  n->y = y;
+  n->orientation = or;
+}
+
+void init_list(list *l,unsigned int element_size ) {
+  l->nb_elem = 0:
+  l->first = NULL;
+  l->element_size = element_size;
+}
+
+void list_add_front(list * l, void *elem) {
+  cell *temp,*new_cell = (cell*) malloc(sizeof(cell));
+  cell->data = malloc(l->element_size);
+  memcpy(cell->data, elem, l->element_size);
+  temp = l->first;
+  l->first = new_cell;
+  new_cell->next = temp;
+}
+
+int list_get_index(list *l,int i, void *data) {
+  if (i >= l->nb_elem || i < 0 ) return 0;
+  cell *current = l->first;
+  int acc = 0;
+  while(acc != i){
+    current = current->next;
+    acc++;
+  }
+  memcpy(data, current->data, l->element_size);
+  return 1;
 }
