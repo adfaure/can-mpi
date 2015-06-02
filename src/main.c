@@ -1,9 +1,11 @@
-
 #include <mpi.h>
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <string.h>
+
+#define only_for(a) if(com_rank == a)
 
 #define MAX_SIZE_BUFFER 100
 #define MAX_SIZE_NEIGHBOUR 100
@@ -13,11 +15,17 @@
 // thus tag can only be send by the root node
 #define ROOT_TAG_INIT_NODE 0
 
-#define ACK_TAG_BOOTSTRAP 42
-#define REQUEST_TO_JOIN   666
-#define NEGOCIATE_LAND    123
-#define LOCALIZE          321
-#define LOCALIZE_RESP     13
+#define GET_ENTRY_POINT      4
+#define SEND_ENTRY_POINT     5
+#define RES_REQUEST_TO_JOIN  12
+#define LOCALIZE_RESP        13
+#define IDL                  32
+#define ACK_TAG_BOOTSTRAP    42
+#define REQUEST_INIT_SPLIT   64
+#define NEGOCIATE_LAND       123
+#define REQUEST_RECEIVE_LAND 234
+#define LOCALIZE             321
+#define REQUEST_TO_JOIN      666
 
 #define SIZE_X 1000
 #define SIZE_Y 1000
@@ -37,9 +45,14 @@ typedef struct _pair {
 } pair;
 
 typedef struct _land {
-  int x, y;
+  unsigned int x, y;
   unsigned int size_x, size_y;
 } land;
+
+typedef struct _cell {
+  void *data;
+  struct _cell *next;
+} cell;
 
 typedef struct _neighbour  {
   int orientation; //
@@ -49,21 +62,16 @@ typedef struct _neighbour  {
 
 typedef enum { false, true } bool;
 
-typedef struct _cell {
-  void *data;
-  cell *next;
-} cell;
-
 typedef struct _list {
   int nb_elem;
-  unsigned element_size;
+  size_t element_size;
   cell *first;
 } list;
 
 /**
  * init a generique liste
  */
-void init_list(list *l);
+ void init_list(list *l, unsigned int element_size);
 
 /**
  * add elem in a generique list
@@ -93,7 +101,7 @@ void print_pair(const pair *p);
 /**
  * return true if the land cotains the point defined by x and y is
  */
-bool is_land_contains(const land *l, int x, int y);
+bool is_land_contains(const land *l, unsigned  int x,unsigned  int y);
 
 /**
  * return true if the land contains the pair
@@ -108,7 +116,7 @@ void split_land(land *new_land ,land *old_land);
 /**
  *  init a land
  */
-void init_land(land *l, int x, int y,unsigned int s_x,unsigned int s_y);
+void init_land(land *l,unsigned  int x,unsigned  int y,unsigned int s_x,unsigned int s_y);
 
 /**
  *  init a land
@@ -147,6 +155,7 @@ long long now();
 
 int main(int argc, char**argv) {
   int nb_proc, com_rank,node_number , i, corresp, localise;
+  unsigned int land_buffer[4];
   int main_loop_tag, main_loop_from, count, main_loop_buffer_int[MAX_SIZE_BUFFER], send_int_buffer[MAX_SIZE_BUFFER], wait_array[2]; // wait_array on attend un message d'une source avec un tag
   bool bootstrap = false, active = false, is_waiting = false;
   pair pair_id, pair_join_request;
@@ -168,9 +177,9 @@ int main(int argc, char**argv) {
         main_loop_tag  = main_loop_status.MPI_TAG;
         if(main_loop_tag == ACK_TAG_BOOTSTRAP) {
           printf("bootstraping node did it well \n");
-        } else if(main_loop_tag == REQUEST_TO_JOIN) {
-          main_loop_buffer_int[0] = i;
-          MPI_Send(&main_loop_buffer_int[0] , 1, MPI_INT, i, REQUEST_TO_JOIN, MPI_COMM_WORLD );
+        } else if(main_loop_tag == GET_ENTRY_POINT) {
+          main_loop_buffer_int[0] = 1;
+          MPI_Send(&main_loop_buffer_int[0] ,1 , MPI_INT, i, SEND_ENTRY_POINT, MPI_COMM_WORLD );
         }
       }
     }
@@ -180,6 +189,7 @@ int main(int argc, char**argv) {
       MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &main_loop_status);
       main_loop_from = main_loop_status.MPI_SOURCE;
       main_loop_tag  = main_loop_status.MPI_TAG;
+      printf("noeud %d,  recu %d, from %d \n", com_rank, main_loop_tag ,main_loop_from );
       if(main_loop_tag == ROOT_TAG_INIT_NODE) {
         MPI_Get_count (&main_loop_status, MPI_INT, &count);
         MPI_Recv(&main_loop_buffer_int[0] ,count , MPI_INT, main_loop_from,
@@ -191,33 +201,52 @@ int main(int argc, char**argv) {
           MPI_Send(&main_loop_buffer_int[0] ,1 ,MPI_INT ,ROOT_PROCESS ,ACK_TAG_BOOTSTRAP ,MPI_COMM_WORLD);
         } else {
           main_loop_buffer_int[0] = com_rank;
-          MPI_Send(&main_loop_buffer_int[0] ,1 ,MPI_INT ,ROOT_PROCESS ,REQUEST_TO_JOIN ,MPI_COMM_WORLD);
-        }
-      } else if(main_loop_tag == REQUEST_TO_JOIN) {
-        MPI_Get_count (&main_loop_status, MPI_INT, &count);
-        MPI_Recv(&main_loop_buffer_int[0] ,count , MPI_INT, main_loop_from,
-          main_loop_tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        if(main_loop_from == 0) {
+          MPI_Send(&main_loop_buffer_int[0] ,1 , MPI_INT ,ROOT_PROCESS ,GET_ENTRY_POINT ,MPI_COMM_WORLD);
+          MPI_Recv(&main_loop_buffer_int[0] ,1 , MPI_INT, ROOT_PROCESS, SEND_ENTRY_POINT, MPI_COMM_WORLD, &main_loop_status);
           send_int_buffer[0] = com_rank; send_int_buffer[1] = pair_id.x; send_int_buffer[2] = pair_id.y;
-          CAN_Recv_localise_timeout(&localise, &pair_id, com_rank, *main_loop_buffer_int, MPI_COMM_WORLD, 1000);
-          if(localise == -1) {
-            printf("localise timeouted \n");
-          } else {
-
-          }
-        } else {
-          printf("le noeud %d asked me to join \n", main_loop_buffer_int[0]);
+          MPI_Send((&send_int_buffer[0]), 3, MPI_INT, main_loop_buffer_int[0], REQUEST_TO_JOIN, MPI_COMM_WORLD);
         }
-      } else if( main_loop_tag == LOCALIZE ) {
+      }
+      // Request de localisation, le noeud contenant la paire transporté répondra au noeud de la requete RES_REQUEST_TO_JOIN
+      else if(main_loop_tag == REQUEST_TO_JOIN) {
+        MPI_Recv(&main_loop_buffer_int[0] ,3, MPI_INT, main_loop_from, main_loop_tag, MPI_COMM_WORLD, &main_loop_status);
+        init_pair(&pair_join_request, main_loop_buffer_int[1], main_loop_buffer_int[2]);
+        if(is_land_contains_pair(&land_id, &pair_join_request)) {
+            MPI_Send(&com_rank, 1, MPI_INT, main_loop_buffer_int[0], RES_REQUEST_TO_JOIN,  MPI_COMM_WORLD);
+            printf("demande de fusion de la part de  %d, je suis le noeud %d \n" , main_loop_buffer_int[0],  com_rank);
+        } else {
+            // faire passer
+        }
+      }
+
+      else if(main_loop_tag == RES_REQUEST_TO_JOIN) {
+        MPI_Recv(&main_loop_buffer_int[0] ,1, MPI_INT, main_loop_from, main_loop_tag, MPI_COMM_WORLD, &main_loop_status);
+        printf("JE suis le noeud : %d , Le noeud %d à répondu à ma requete RES_REQUEST_TO_JOIN \n" , com_rank, main_loop_buffer_int[0]);
+        MPI_Send(&(main_loop_buffer_int[0]),1 , MPI_INT , main_loop_from , REQUEST_INIT_SPLIT, MPI_COMM_WORLD);
+        MPI_Recv(&(land_buffer[0]), 4, MPI_UNSIGNED, main_loop_from, REQUEST_RECEIVE_LAND, MPI_COMM_WORLD, &main_loop_status);
+        init_land(&land_id, land_buffer[0], land_buffer[1] , land_buffer[2], land_buffer[3]);
+        print_land(&land_id);
+      }
+
+      else if(main_loop_tag == REQUEST_INIT_SPLIT) {
+        MPI_Get_count (&main_loop_status, MPI_INT, &count);
+        MPI_Recv(&main_loop_buffer_int[0] ,count, MPI_INT, main_loop_from, main_loop_tag, MPI_COMM_WORLD, &main_loop_status);
+        split_land(&new_land, &land_id);
+        land_buffer[0] = new_land.x; land_buffer[1] = new_land.y;land_buffer[2] = new_land.size_x;land_buffer[3] = new_land.size_y;
+        MPI_Send(&land_buffer[0], 4, MPI_UNSIGNED, main_loop_from, REQUEST_RECEIVE_LAND, MPI_COMM_WORLD );
+      }
+
+      else if(main_loop_tag == LOCALIZE) {
         corresp = main_loop_buffer_int[0];
         init_pair(&pair_join_request,  main_loop_buffer_int[1], main_loop_buffer_int[2]);
         if(is_land_contains_pair(&land_id, &pair_join_request)) {
-          printf("its here ! \n");
           MPI_Send(&com_rank, 1, MPI_INT, corresp, LOCALIZE_RESP, MPI_COMM_WORLD);
         } else {
           // trouver un voisin et transmettre la requete.
         }
-      } else   {
+      }
+
+      else   {
         printf("unknow tag \n");
       }
     }
@@ -280,14 +309,14 @@ void print_pair(const pair *p) {
   printf("paire : (%d ,%d) \n", p->x, p->y);
 }
 
-void init_land(land *l, int x, int y,unsigned int s_x,unsigned int s_y) {
+void init_land(land *l,unsigned  int x,unsigned  int y,unsigned int s_x,unsigned int s_y) {
   l->x = x;
   l->y = y;
   l->size_x = s_x;
   l->size_y = s_y;
 }
 
-bool is_land_contains(const land *l, int x, int y) {
+bool is_land_contains(const land *l,unsigned int x,unsigned int y) {
   return ((l->x < x && l->x + l->size_x > x) && (l->y < y && l->y + l->size_y > y));
 }
 
@@ -296,27 +325,25 @@ bool is_land_contains_pair(const land *l,const pair *p) {
 }
 
 void split_land(land *new_land ,land *old_land) {
-  int new_x, new_y, new_size_x, new_size_y, is_odd_x, is_odd_y;
+  unsigned int new_x, new_y, new_size_x, new_size_y;
   if(old_land->size_x > old_land->size_y) {
-    is_odd_x = (old_land->size_x % 2) ? 0 : 1;
-    new_x = old_land->x + (old_land->size_x / 2) + is_odd_x ;
+    new_x = old_land->x + (old_land->size_x / 2);
     new_y = old_land->y;
     new_size_y = old_land->y;
     new_size_x = old_land->size_x / 2;
-    old_land->size_x = new_size_x + is_odd_x;
+    old_land->size_x = new_size_x - 1 ;
   } else {
-    is_odd_y = (old_land->size_y % 2) ? 0 : 1;
     new_x    = old_land->x;
-    new_y = old_land->y + (old_land->size_y / 2 ) + is_odd_y;
-    new_size_y = old_land->size_y / 2;
+    new_y = old_land->y + (old_land->size_y / 2 );
+    new_size_y = (old_land->size_y / 2);
     new_size_x = old_land->size_x;
-    old_land->size_y = new_size_y + is_odd_y;
+    old_land->size_y = new_size_y - 1;
   }
   init_land(new_land, new_x, new_y, new_size_x, new_size_y);
 }
 
 void print_land(const land *l) {
-  printf("((%d , %u), (%d , %u))", l->x, l->size_x, l->y, l->size_y);
+  printf("((%u, %u), (%u , %u))\n", l->x, l->x + l->size_x, l->y,l->y + l->size_y);
 }
 
 float **alloc_2d_float(int rows, int cols) {
@@ -354,16 +381,16 @@ void init_neighbour(neighbour *n, int x, int y, int size_x, int size_y, int or) 
   n->orientation = or;
 }
 
-void init_list(list *l,unsigned int element_size ) {
-  l->nb_elem = 0:
+void init_list(list *l, unsigned int element_size) {
+  l->nb_elem = 0;
   l->first = NULL;
   l->element_size = element_size;
 }
 
 void list_add_front(list * l, void *elem) {
   cell *temp,*new_cell = (cell*) malloc(sizeof(cell));
-  cell->data = malloc(l->element_size);
-  memcpy(cell->data, elem, l->element_size);
+  new_cell->data = malloc(l->element_size);
+  memcpy(new_cell->data, elem, l->element_size);
   temp = l->first;
   l->first = new_cell;
   new_cell->next = temp;
