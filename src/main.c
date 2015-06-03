@@ -16,6 +16,7 @@
 #define ROOT_TAG_INIT_NODE 0
 
 #define GET_ENTRY_POINT      4
+#define ACK                  78
 #define SEND_ENTRY_POINT     5
 #define RES_REQUEST_TO_JOIN  12
 #define LOCALIZE_RESP        13
@@ -26,14 +27,19 @@
 #define REQUEST_RECEIVE_LAND 234
 #define LOCALIZE             321
 #define REQUEST_TO_JOIN      666
+#define RES_INIT_NEIGHBOUR   56
 
 #define SIZE_X 1000
 #define SIZE_Y 1000
 
-#define VOISIN_T 0 //top
-#define VOISIN_B 1 //bot
-#define VOISIN_L 2 //left
-#define VOISIN_R 3 //right
+#define VOISIN_V     6 //vertical
+#define VOISIN_H     1 //horizontal
+#define VOISIN_TOP   2
+#define VOISIN_BOT   3
+#define VOISIN_LEFT  4
+#define VOISIN_RIGHT 5
+#define VOISIN_NONE  0
+
 
 #define max(a,b) \
    ({ __typeof__ (a) _a = (a); \
@@ -55,9 +61,10 @@ typedef struct _cell {
 } cell;
 
 typedef struct _neighbour  {
-  int orientation; //
-  int x, y; // begin point top left
-  int size_x, size_y;
+  unsigned int orientation; //
+  unsigned int x, y; // begin point top left
+  unsigned int size;
+  unsigned int com_rank;
 } neighbour;
 
 typedef enum { false, true } bool;
@@ -114,6 +121,11 @@ bool is_land_contains_pair(const land *l,const pair *p);
 void split_land(land *new_land ,land *old_land);
 
 /**
+ *
+ */
+void split_land_update_neighbour(land *new_land , land *old_land, list *new_n ,list *old_n, int ,int);
+
+/**
  *  init a land
  */
 void init_land(land *l,unsigned  int x,unsigned  int y,unsigned int s_x,unsigned int s_y);
@@ -153,11 +165,39 @@ void CAN_Recv_localise_timeout(int *loc ,const pair *pair, int self_rank , int f
  */
 long long now();
 
+void init_neighbour(neighbour *n, unsigned int x, unsigned int y, unsigned int size , unsigned int or, unsigned int com_rank);
+
+int is_neigbour(const land *land, const neighbour *n);
+
+bool is_neigbour_top(const land *land, const neighbour *n);
+
+bool is_neigbour_bot(const land *land, const neighbour *n);
+
+bool is_neigbour_left(const land *land, const neighbour *n);
+
+bool is_neigbour_right(const land *land, const neighbour *n);
+
+int list_get_index(list *l,int i, void *data);
+
+void list_add_front(list * l, void *elem);
+
+void init_list(list *l, unsigned int element_size);
+
+void land_extract_neighbourg_after_split(land *land1, land * land2, neighbour *n1, neighbour *n2);
+
+void adjust_neighbour(land *land, neighbour *n);
+
+void print_neighbour(const neighbour *n);
+
+void neighbour_to_buffer(list *l, unsigned int buffer[MAX_SIZE_BUFFER]);
+
 int main(int argc, char**argv) {
   int nb_proc, com_rank,node_number , i, corresp, localise;
-  unsigned int land_buffer[4];
+  unsigned int land_buffer[4] , buffer_ui[MAX_SIZE_BUFFER], buffer_simple_int;
+  int wait_for = -1;
   int main_loop_tag, main_loop_from, count, main_loop_buffer_int[MAX_SIZE_BUFFER], send_int_buffer[MAX_SIZE_BUFFER], wait_array[2]; // wait_array on attend un message d'une source avec un tag
   bool bootstrap = false, active = false, is_waiting = false;
+  list voisins, temp_voisins;
   pair pair_id, pair_join_request;
   land land_id, new_land;
   MPI_Status main_loop_status;
@@ -165,7 +205,8 @@ int main(int argc, char**argv) {
   MPI_Init (&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &nb_proc);
   MPI_Comm_rank(MPI_COMM_WORLD, &com_rank);
-
+  init_list(&voisins, sizeof(neighbour));
+  init_list(&temp_voisins, sizeof(neighbour));
   srand((unsigned) time(NULL) + com_rank * nb_proc);
 
   if(com_rank == ROOT_PROCESS) {
@@ -186,7 +227,11 @@ int main(int argc, char**argv) {
   } else {
     get_random_id(&pair_id, SIZE_X, SIZE_Y);
     while(1) {
-      MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &main_loop_status);
+      if(wait_for != -1) {
+        printf("je suis [%d] en attente d'un message de %d \n", com_rank, wait_for);
+      }
+      printf("noeud %d en attente de message \n", com_rank);
+      MPI_Probe(wait_for, MPI_ANY_TAG, MPI_COMM_WORLD, &main_loop_status);
       main_loop_from = main_loop_status.MPI_SOURCE;
       main_loop_tag  = main_loop_status.MPI_TAG;
       printf("noeud %d,  recu %d, from %d \n", com_rank, main_loop_tag ,main_loop_from );
@@ -214,8 +259,23 @@ int main(int argc, char**argv) {
         if(is_land_contains_pair(&land_id, &pair_join_request)) {
             MPI_Send(&com_rank, 1, MPI_INT, main_loop_buffer_int[0], RES_REQUEST_TO_JOIN,  MPI_COMM_WORLD);
             printf("demande de fusion de la part de  %d, je suis le noeud %d \n" , main_loop_buffer_int[0],  com_rank);
+            wait_for = main_loop_from;
         } else {
-            // faire passer
+          printf("trouver unh voisin et faire passer  %d, je suis le noeud %d \n" , main_loop_buffer_int[0],  com_rank);
+        }
+      }
+
+      else if(main_loop_tag == RES_INIT_NEIGHBOUR) {
+        int nb_voisins, idx = 0;
+        neighbour temp_voisin;
+        MPI_Get_count (&main_loop_status, MPI_UNSIGNED, &count);
+        MPI_Recv(&buffer_ui[0] ,count, MPI_UNSIGNED, main_loop_from, main_loop_tag, MPI_COMM_WORLD, &main_loop_status);
+        nb_voisins = count / (sizeof(neighbour) / sizeof(unsigned int));
+        for(int i = 0; i < nb_voisins; i++) {
+          init_neighbour(&temp_voisin, buffer_ui[idx], buffer_ui[idx+1], buffer_ui[idx+2],buffer_ui[idx+3], buffer_ui[idx+4]);
+          list_add_front(&voisins, &temp_voisin);
+          print_neighbour(&temp_voisin);
+          idx += 5;
         }
       }
 
@@ -225,16 +285,22 @@ int main(int argc, char**argv) {
         MPI_Send(&(main_loop_buffer_int[0]),1 , MPI_INT , main_loop_from , REQUEST_INIT_SPLIT, MPI_COMM_WORLD);
         MPI_Recv(&(land_buffer[0]), 4, MPI_UNSIGNED, main_loop_from, REQUEST_RECEIVE_LAND, MPI_COMM_WORLD, &main_loop_status);
         init_land(&land_id, land_buffer[0], land_buffer[1] , land_buffer[2], land_buffer[3]);
+        printf("je suis le noeud  %d, on ma affecter la zone \n -> ", com_rank );
         print_land(&land_id);
       }
 
       else if(main_loop_tag == REQUEST_INIT_SPLIT) {
         MPI_Get_count (&main_loop_status, MPI_INT, &count);
         MPI_Recv(&main_loop_buffer_int[0] ,count, MPI_INT, main_loop_from, main_loop_tag, MPI_COMM_WORLD, &main_loop_status);
-        split_land(&new_land, &land_id);
+        split_land_update_neighbour(&new_land, &land_id, &temp_voisins, &voisins, main_loop_from , com_rank);
         land_buffer[0] = new_land.x; land_buffer[1] = new_land.y;land_buffer[2] = new_land.size_x;land_buffer[3] = new_land.size_y;
         MPI_Send(&land_buffer[0], 4, MPI_UNSIGNED, main_loop_from, REQUEST_RECEIVE_LAND, MPI_COMM_WORLD );
+        neighbour_to_buffer(&temp_voisins, buffer_ui);
+        MPI_Send((&buffer_ui[0]), temp_voisins.nb_elem * (sizeof(neighbour)/sizeof(unsigned int)), MPI_UNSIGNED, main_loop_from, RES_INIT_NEIGHBOUR, MPI_COMM_WORLD);
+        printf("je suis %d , transaction fini avec %d \n",com_rank, wait_for);
+        wait_for = -1;
       }
+        //void neighbour_to_buffer(list *l, unsigned int *buffer[MAX_SIZE_BUFFER])
 
       else if(main_loop_tag == LOCALIZE) {
         corresp = main_loop_buffer_int[0];
@@ -326,24 +392,107 @@ bool is_land_contains_pair(const land *l,const pair *p) {
 
 void split_land(land *new_land ,land *old_land) {
   unsigned int new_x, new_y, new_size_x, new_size_y;
-  if(old_land->size_x > old_land->size_y) {
+  if(old_land->size_x >= old_land->size_y) {
     new_x = old_land->x + (old_land->size_x / 2);
     new_y = old_land->y;
-    new_size_y = old_land->y;
+    new_size_y = old_land->size_y;
     new_size_x = old_land->size_x / 2;
-    old_land->size_x = new_size_x - 1 ;
+    old_land->size_x = new_size_x ;
   } else {
-    new_x    = old_land->x;
+    new_x = old_land->x;
     new_y = old_land->y + (old_land->size_y / 2 );
     new_size_y = (old_land->size_y / 2);
     new_size_x = old_land->size_x;
-    old_land->size_y = new_size_y - 1;
+    old_land->size_y = new_size_y ;
   }
   init_land(new_land, new_x, new_y, new_size_x, new_size_y);
 }
 
+void split_land_update_neighbour(land *new_land , land *old_land, list *new_n ,list *old_n, int new_rank, int old_rank) {
+  neighbour temp, old, new;
+  split_land(new_land, old_land);
+  land_extract_neighbourg_after_split(new_land, old_land, &old, &new);
+  old.com_rank = new_rank;
+  new.com_rank = old_rank;
+  for(int i = 0; i < old_n->nb_elem; i++) {
+    list_get_index(old_n,i ,&temp);
+    printf("yahhhhhh \n");
+    printf(" %u , %u ,%u,%u,%u \n", temp.x, temp.y, temp.size, temp.orientation, temp.com_rank);
+    print_neighbour(&temp);
+    if(is_neigbour(new_land , &temp)) {
+      adjust_neighbour(new_land, &temp);
+      list_add_front(new_n, &temp);
+    }
+    list_get_index(old_n,i ,&temp);
+    if(is_neigbour(old_land , &temp)) {
+      print_neighbour(&temp);
+      adjust_neighbour(old_land, &temp);
+    }
+  }
+
+  list_add_front(old_n, &old);
+  list_add_front(new_n, &new);
+}
+
+void land_extract_neighbourg_after_split(land *land1, land * land2, neighbour *n1, neighbour *n2) {
+  if(land1->x == land2->x) // alors ils sont l'un au dessu de l'autre
+  {
+    n1->size = land1->size_y;
+    n2->size = land1->size_y;
+    n2->x = land2->x;
+    n1->x = land1->x;
+    n1->orientation = VOISIN_H;
+    n2->orientation = VOISIN_H;
+    if(land1->y < land2->y) {
+      n1->y = land2->y;
+      n2->y = land1->y + land1->size_y;
+    } else {
+      n2->y = land1->y;
+      n1->y = land2->y + land2->size_y;
+    }
+  } else if(land1->y == land2->y) {
+    n1->size = land1->size_x;
+    n2->size = land1->size_x;
+    n2->y = land2->y;
+    n1->y = land1->y;
+    n1->orientation = VOISIN_V;
+    n2->orientation = VOISIN_V;
+    if(land1->x < land2->x) {
+      n1->x = land2->x;
+      n2->x = land1->x + land1->size_x;
+    } else {
+      n2->x = land1->x;
+      n1->x = land2->x + land2->size_x;
+    }
+  } else {
+    printf("impossible \n");
+  }
+}
+
+void adjust_neighbour(land *land, neighbour *n) {
+  if(n->orientation == VOISIN_V) {
+    if(n->x < land->x) {
+      n->size = n->size - (land->x - n->x);
+      n->x = land->x;
+    }
+    if(n->x > land->x + land->size_x) {
+      n->size = n->size - (n->x - land->x);
+      n->x = land->x + land->size_x;
+    }
+  } else if(n->orientation == VOISIN_H) {
+    if(n->y < land->y) {
+      n->size = n->size - (land->y - n->y);
+      n->y = land->y;
+    }
+    if(n->y > land->y + land->size_y) {
+      n->size = n->size - (n->y - land->y);
+      n->y = land->y + land->size_y;
+    }
+  }
+}
+
 void print_land(const land *l) {
-  printf("((%u, %u), (%u , %u))\n", l->x, l->x + l->size_x, l->y,l->y + l->size_y);
+  printf("((%u, %u), (%u , %u))\n", l->x,  l->size_x, l->y, l->size_y);
 }
 
 float **alloc_2d_float(int rows, int cols) {
@@ -373,12 +522,84 @@ long long now() {
     return millisecondsSinceEpoch;
 }
 
-void init_neighbour(neighbour *n, int x, int y, int size_x, int size_y, int or) {
-  n->size_y = size_y;
-  n->size_x = size_x;
+void init_neighbour(neighbour *n, unsigned int x, unsigned int y, unsigned int size , unsigned int or, unsigned int com_rank) {
+  n->size = size;
   n->x = x;
   n->y = y;
   n->orientation = or;
+  n->com_rank = com_rank;
+}
+
+int is_neigbour(const land *land,const neighbour *n) {
+  if(is_neigbour_top(land, n)) {
+    return VOISIN_TOP;
+  } else if (is_neigbour_bot(land, n)) {
+    return VOISIN_BOT;
+  } else if(is_neigbour_left(land, n)) {
+    return VOISIN_LEFT;
+  } else if(is_neigbour_right(land, n)) {
+    return VOISIN_RIGHT;
+  } else {
+    return VOISIN_NONE;
+  }
+}
+
+void neighbour_to_buffer(list *l, unsigned int buffer[MAX_SIZE_BUFFER]) {
+  neighbour temp;
+  int idx = 0;
+  for(int i = 0; i < l->nb_elem; i++) {
+    list_get_index(l,i ,&temp);
+    buffer[idx]   = temp.x;
+    buffer[idx+1] = temp.y;
+    buffer[idx+2] = temp.size;
+    buffer[idx+3] = temp.orientation;
+    buffer[idx+4] = temp.com_rank;
+    idx += 5;
+  }
+}
+
+bool is_neigbour_top(const land *land, const neighbour *n) {
+    if(n->orientation == VOISIN_V)
+      return false;
+
+    bool temp = (land->x < n->x && land->x + land->size_x > n->x) || (land->x < n->x + n->size  && land->x + land->size_x > n->x + n->size );
+    return temp && (land->y == n->y);
+}
+
+bool is_neigbour_bot(const land *land, const neighbour *n) {
+    if(n->orientation == VOISIN_V)
+      return false;
+
+    bool temp = (land->x < n->x && land->x + land->size_x > n->x) || (land->x < n->x + n->size && land->x + land->size_x > n->x + n->size);
+    return temp && (n->y == land->y + land->size_y);
+}
+
+bool is_neigbour_left(const land *land, const neighbour *n) {
+    if(n->orientation == VOISIN_H)
+      return false;
+
+    bool temp = (land->y < n->y && land->y + land->size_y > n->y) || (land->y < n->y + n->size  && land->y + land->size_y > n->y + n->size);
+    return temp && (n->x == land->x);
+}
+
+bool is_neigbour_right(const land *land, const neighbour *n) {
+    if(n->orientation == VOISIN_H)
+      return false;
+
+    bool temp = (land->y < n->y && land->y + land->size_y > n->y) || (land->y < n->y + n->size  && land->y + land->size_y > n->y + n->size );
+    return temp && (n->x == land->x + land->size_x);
+}
+
+void print_neighbour(const neighbour *n) {
+  if(n->orientation == VOISIN_V) {
+    printf("|");
+    printf(" [%u] (%d, %d) , (%d) \n",n->com_rank ,n->x,n->y,n->x + n->size);
+  } else if(n->orientation == VOISIN_H) {
+    printf("--");
+    printf(" [%u] (%d, %d) , (%d) \n",n->com_rank ,n->x,n->y ,n->y  + n->size);
+  } else {
+    printf("invalid neighbour \n");
+  }
 }
 
 void init_list(list *l, unsigned int element_size) {
@@ -394,6 +615,7 @@ void list_add_front(list * l, void *elem) {
   temp = l->first;
   l->first = new_cell;
   new_cell->next = temp;
+  l->nb_elem++;
 }
 
 int list_get_index(list *l,int i, void *data) {
