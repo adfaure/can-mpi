@@ -12,6 +12,7 @@
 
 //LOG define
 #define LAND_LOG 0
+#define NEIGHBOUR_LOG 1
 
 
 //root process
@@ -24,6 +25,7 @@
 #define ACK                  78
 #define SEND_ENTRY_POINT     5
 #define RES_REQUEST_TO_JOIN  12
+#define SEND_NEIGBOUR_ORDER  34
 #define LOCALIZE_RESP        13
 #define IDL                  32
 #define ACK_TAG_BOOTSTRAP    42
@@ -221,7 +223,7 @@ int main(int argc, char**argv) {
   int main_loop_tag, main_loop_from, count, main_loop_buffer_int[MAX_SIZE_BUFFER], send_int_buffer[MAX_SIZE_BUFFER], wait_array[2]; // wait_array on attend un message d'une source avec un tag
   bool bootstrap = false, active = false, is_waiting = false;
   list voisins, temp_voisins;
-  neighbour neighbour_temp_find;
+  neighbour neighbour_temp_find, temp_voisin;
   pair pair_id, pair_join_request;
   land land_id, new_land, temp_land;
   MPI_Status main_loop_status;
@@ -260,6 +262,19 @@ int main(int argc, char**argv) {
           MPI_Recv(&(land_buffer[0]), 4, MPI_UNSIGNED, i, ACK, MPI_COMM_WORLD, &main_loop_status);
           init_land(&temp_land, land_buffer[0], land_buffer[1] , land_buffer[2], land_buffer[3]);
           log_factory(file, &temp_land, LAND_LOG, i);
+          MPI_Send(&buffer_simple_int ,1 , MPI_INT, i, SEND_NEIGBOUR_ORDER, MPI_COMM_WORLD);
+          MPI_Probe(i, ACK, MPI_COMM_WORLD, &main_loop_status);
+          MPI_Get_count (&main_loop_status, MPI_UNSIGNED, &count);
+          MPI_Recv(&buffer_ui[0] ,count, MPI_UNSIGNED, i, ACK, MPI_COMM_WORLD, &main_loop_status);
+          int nb_voisins = count / (sizeof(neighbour) / sizeof(unsigned int));
+          int idx = 0;
+          for(int j = 0; j < nb_voisins; j++) {
+            init_neighbour(&temp_voisin, buffer_ui[idx], buffer_ui[idx+1], buffer_ui[idx+2],buffer_ui[idx+3], buffer_ui[idx+4]);
+            list_add_front(&voisins, &temp_voisin);
+            log_factory(file, &temp_voisin, NEIGHBOUR_LOG, i);
+            print_neighbour(&temp_voisin);
+            idx += 5;
+          }
         }
     }
 
@@ -291,8 +306,8 @@ int main(int argc, char**argv) {
           MPI_Send((&send_int_buffer[0]), 3, MPI_INT, main_loop_buffer_int[0], REQUEST_TO_JOIN, MPI_COMM_WORLD);
         }
       }
-      // Request de localisation, le noeud contenant la paire transporté répondra au noeud de la requete RES_REQUEST_TO_JOIN
       else if(main_loop_tag == REQUEST_TO_JOIN) {
+      // Request de localisation, le noeud contenant la paire transporté répondra au noeud de la requete RES_REQUEST_TO_JOIN
         MPI_Recv(&main_loop_buffer_int[0] ,3, MPI_INT, main_loop_from, main_loop_tag, MPI_COMM_WORLD, &main_loop_status);
         init_pair(&pair_join_request, main_loop_buffer_int[1], main_loop_buffer_int[2]);
         if(is_land_contains_pair(&land_id, &pair_join_request)) {
@@ -300,9 +315,9 @@ int main(int argc, char**argv) {
             printf("demande de fusion de la part de  %d, je suis le noeud %d \n" , main_loop_buffer_int[0],  com_rank);
             wait_for = main_loop_buffer_int[0];
         } else {
-          printf("yahhhh \n");
           if(find_neighbour(&voisins, &pair_join_request, &neighbour_temp_find)) {
             printf("je suis %d et je fait passer à  ---> ", com_rank);
+            print_pair(&pair_join_request);
             print_neighbour(&neighbour_temp_find);
             MPI_Send(&main_loop_buffer_int[0], 3, MPI_INT, neighbour_temp_find.com_rank, REQUEST_TO_JOIN,  MPI_COMM_WORLD);
           } else {
@@ -323,7 +338,6 @@ int main(int argc, char**argv) {
       }
       else if(main_loop_tag == RES_INIT_NEIGHBOUR) {
         int nb_voisins, idx = 0;
-        neighbour temp_voisin;
         MPI_Get_count (&main_loop_status, MPI_UNSIGNED, &count);
         MPI_Recv(&buffer_ui[0] ,count, MPI_UNSIGNED, main_loop_from, main_loop_tag, MPI_COMM_WORLD, &main_loop_status);
         nb_voisins = count / (sizeof(neighbour) / sizeof(unsigned int));
@@ -343,6 +357,12 @@ int main(int argc, char**argv) {
         init_land(&land_id, land_buffer[0], land_buffer[1] , land_buffer[2], land_buffer[3]);
         printf("je suis le noeud  %d, on ma affecter la zone \n -> ", com_rank );
         print_land(&land_id);
+      }
+
+      else if(main_loop_tag == SEND_NEIGBOUR_ORDER) {
+        neighbour_to_buffer(&voisins, buffer_ui);
+        MPI_Recv(&main_loop_buffer_int[0] ,1, MPI_INT, main_loop_from, main_loop_tag, MPI_COMM_WORLD, &main_loop_status);
+        MPI_Send((&buffer_ui[0]), voisins.nb_elem * (sizeof(neighbour)/sizeof(unsigned int)), MPI_UNSIGNED, main_loop_from, ACK, MPI_COMM_WORLD);
       }
 
       else if(main_loop_tag == REQUEST_INIT_SPLIT) {
@@ -387,10 +407,6 @@ void CAN_Recv_localise(int *loc ,const pair *pair, int self_rank , int first_nod
   MPI_Send(&(buffer[0]), 3, MPI_INT, first_node, LOCALIZE, comm);
   MPI_Recv(loc, 1, MPI_INT, MPI_ANY_SOURCE, LOCALIZE_RESP, comm, &status);
   free(buffer);
-}
-
-void CAN_Negociate_land(int *loc ,const pair *pair, int self_rank , int first_node ,MPI_Comm comm) {
-  printf("negociation betwen %d and %d", self_rank, first_node);
 }
 
 // int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag,
@@ -439,7 +455,7 @@ void init_land(land *l,unsigned  int x,unsigned  int y,unsigned int s_x,unsigned
 }
 
 bool is_land_contains(const land *l,unsigned int x,unsigned int y) {
-  return ((l->x < x && l->x + l->size_x > x) && (l->y < y && l->y + l->size_y > y));
+  return ((l->x <= x && l->x + l->size_x > x) && (l->y <= y && l->y + l->size_y > y));
 }
 
 bool is_land_contains_pair(const land *l,const pair *p) {
@@ -726,10 +742,23 @@ void log_factory(FILE *f, const void *data, int CODE, int from) {
     fprintf(f," -> %d ", from);
   }
   land temp_land;
+  neighbour temp_neighbour;
   switch(CODE) {
     case LAND_LOG :
       memcpy(&temp_land,data, sizeof(land));
       fprintf(f, "((%u, %u), (%u , %u))\n", temp_land.x,  temp_land.size_x, temp_land.y, temp_land.size_y);
+      break;
+    case NEIGHBOUR_LOG :
+      memcpy(&temp_neighbour, data, sizeof(neighbour));
+      if(temp_neighbour.orientation == VOISIN_V) {
+        fprintf(f, "|");
+        fprintf(f, " [%u] (%d, %d) , (%d) \n",temp_neighbour.com_rank ,temp_neighbour.x,temp_neighbour.y,temp_neighbour.x + temp_neighbour.size);
+      } else if(temp_neighbour.orientation == VOISIN_H) {
+        fprintf(f,"--");
+        fprintf(f," [%u] (%d, %d) , (%d) \n",temp_neighbour.com_rank ,temp_neighbour.x,temp_neighbour.y ,temp_neighbour.y  + temp_neighbour.size);
+      } else {
+        fprintf(f, "invalid neighbour \n");
+      }
       break;
   }
   fflush(f);
