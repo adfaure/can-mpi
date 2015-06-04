@@ -35,6 +35,7 @@
 #define LOCALIZE             321
 #define REQUEST_TO_JOIN      666
 #define RES_INIT_NEIGHBOUR   56
+#define UPDATE_NEIGBOUR      789
 
 // world size
 #define SIZE_X 1000
@@ -176,6 +177,21 @@ void CAN_Recv_localise_timeout(int *loc ,const pair *pair, int self_rank , int f
 /**
  *
  */
+int CAN_Receive_neighbour(neighbour *neighbour,int mpi_tag ,int mpi_src , MPI_Comm comm );
+
+/**
+ *
+ */
+int CAN_Send_neighbour(const neighbour *neighbour,int mpi_tag ,int mpi_destinataire , MPI_Comm comm);
+
+/**
+ *
+ */
+int CAN_Send_neighbour_list(const list *l ,int mpi_tag ,int mpi_destinataire , MPI_Comm comm);
+
+/**
+ *
+ */
 long long now();
 
 void init_neighbour(neighbour *n, unsigned int x, unsigned int y, unsigned int size , unsigned int or, unsigned int com_rank);
@@ -202,11 +218,17 @@ void print_neighbour(const neighbour *n);
 
 int find_neighbour(const list *l, const pair *pair, neighbour *res );
 
-void neighbour_to_buffer(list *l, unsigned int buffer[MAX_SIZE_BUFFER]);
+void neighbour_to_buffer(const list *l, unsigned int buffer[MAX_SIZE_BUFFER]);
 
 void log_factory(FILE *f,const void *data, int CODE, int from);
 
 double entire_dist_neigbourg(int x1, int y1, const neighbour *neighbour);
+
+void print_neighbour_cb(void *n);
+void free_neighbour_cb(void *);
+void list_apply(const list *l, void(*cb)(void * data));
+
+void list_clear(list *l, void(*free_function)(void *data));
 
 int main(int argc, char**argv) {
   FILE *file;
@@ -282,13 +304,13 @@ int main(int argc, char**argv) {
     get_random_id(&pair_id, SIZE_X, SIZE_Y);
     while(1) {
       if(wait_for != -1) {
-        printf("je suis [%d] en attente d'un message de %d \n", com_rank, wait_for);
+        // printf("je suis [%d] en attente d'un message de %d \n", com_rank, wait_for);
       }
-      printf("noeud %d en attente de message \n", com_rank);
+      //  printf("[ %d ] en attente de message \n", com_rank);
       MPI_Probe(wait_for, MPI_ANY_TAG, MPI_COMM_WORLD, &main_loop_status);
       main_loop_from = main_loop_status.MPI_SOURCE;
       main_loop_tag  = main_loop_status.MPI_TAG;
-      printf("noeud %d,  recu %d, from %d \n", com_rank, main_loop_tag ,main_loop_from );
+      // printf("[ %d ],  recu %d, from %d \n", com_rank, main_loop_tag ,main_loop_from );
       if(main_loop_tag == ROOT_TAG_INIT_NODE) {
         MPI_Get_count (&main_loop_status, MPI_INT, &count);
         MPI_Recv(&main_loop_buffer_int[0] ,count , MPI_INT, main_loop_from,
@@ -312,13 +334,10 @@ int main(int argc, char**argv) {
         init_pair(&pair_join_request, main_loop_buffer_int[1], main_loop_buffer_int[2]);
         if(is_land_contains_pair(&land_id, &pair_join_request)) {
             MPI_Send(&com_rank, 1, MPI_INT, main_loop_buffer_int[0], RES_REQUEST_TO_JOIN,  MPI_COMM_WORLD);
-            printf("demande de fusion de la part de  %d, je suis le noeud %d \n" , main_loop_buffer_int[0],  com_rank);
             wait_for = main_loop_buffer_int[0];
         } else {
           if(find_neighbour(&voisins, &pair_join_request, &neighbour_temp_find)) {
-            printf("je suis %d et je fait passer à  ---> ", com_rank);
             print_pair(&pair_join_request);
-            print_neighbour(&neighbour_temp_find);
             MPI_Send(&main_loop_buffer_int[0], 3, MPI_INT, neighbour_temp_find.com_rank, REQUEST_TO_JOIN,  MPI_COMM_WORLD);
           } else {
             printf("ERROR lors de la recherche de voisins \n");
@@ -328,9 +347,7 @@ int main(int argc, char**argv) {
       else if(main_loop_tag == SEND_LAND_ORDER) {
         MPI_Get_count (&main_loop_status, MPI_INT, &count);
         MPI_Recv(&buffer_simple_int , count , MPI_INT, main_loop_from, main_loop_tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        if(main_loop_from != ROOT_PROCESS ) {
-          printf("you are not allowed to aske me this >< \n");
-        } else {
+        if(main_loop_from == ROOT_PROCESS ) {
           printf("recu SEND_LAND_ORDER \n");
           land_buffer[0] = land_id.x; land_buffer[1] = land_id.y;land_buffer[2] = land_id.size_x;land_buffer[3] = land_id.size_y;
           MPI_Send(&land_buffer[0], 4, MPI_UNSIGNED, main_loop_from, ACK, MPI_COMM_WORLD);
@@ -344,18 +361,26 @@ int main(int argc, char**argv) {
         for(int i = 0; i < nb_voisins; i++) {
           init_neighbour(&temp_voisin, buffer_ui[idx], buffer_ui[idx+1], buffer_ui[idx+2],buffer_ui[idx+3], buffer_ui[idx+4]);
           list_add_front(&voisins, &temp_voisin);
+          if(main_loop_from == temp_voisin.com_rank ) {
+            continue;
+          }
+          printf("MAJ des voisins ! %d \n", com_rank);
+          CAN_Send_neighbour(&temp_voisin,UPDATE_NEIGBOUR, temp_voisin.com_rank, MPI_COMM_WORLD );
           print_neighbour(&temp_voisin);
           idx += 5;
         }
       }
 
+      else if(main_loop_tag == UPDATE_NEIGBOUR) {
+        CAN_Receive_neighbour(&temp_voisin, main_loop_tag, main_loop_from, MPI_COMM_WORLD);
+        printf("Je suis %d, Mes amis je suis heureux de vous annoncer que nous acceuilons à présent un nouveau voisins [%d]! \n ", com_rank, main_loop_from);
+      }
+
       else if(main_loop_tag == RES_REQUEST_TO_JOIN) {
         MPI_Recv(&main_loop_buffer_int[0] ,1, MPI_INT, main_loop_from, main_loop_tag, MPI_COMM_WORLD, &main_loop_status);
-        printf("Je suis le noeud : %d , Le noeud %d à répondu à ma requete RES_REQUEST_TO_JOIN \n" , com_rank, main_loop_buffer_int[0]);
         MPI_Send(&(main_loop_buffer_int[0]),1 , MPI_INT , main_loop_from , REQUEST_INIT_SPLIT, MPI_COMM_WORLD);
         MPI_Recv(&(land_buffer[0]), 4, MPI_UNSIGNED, main_loop_from, REQUEST_RECEIVE_LAND, MPI_COMM_WORLD, &main_loop_status);
         init_land(&land_id, land_buffer[0], land_buffer[1] , land_buffer[2], land_buffer[3]);
-        printf("je suis le noeud  %d, on ma affecter la zone \n -> ", com_rank );
         print_land(&land_id);
       }
 
@@ -371,12 +396,11 @@ int main(int argc, char**argv) {
         split_land_update_neighbour(&new_land, &land_id, &temp_voisins, &voisins, main_loop_from , com_rank);
         land_buffer[0] = new_land.x; land_buffer[1] = new_land.y;land_buffer[2] = new_land.size_x;land_buffer[3] = new_land.size_y;
         MPI_Send(&land_buffer[0], 4, MPI_UNSIGNED, main_loop_from, REQUEST_RECEIVE_LAND, MPI_COMM_WORLD );
-        neighbour_to_buffer(&temp_voisins, buffer_ui);
-        MPI_Send((&buffer_ui[0]), temp_voisins.nb_elem * (sizeof(neighbour)/sizeof(unsigned int)), MPI_UNSIGNED, main_loop_from, RES_INIT_NEIGHBOUR, MPI_COMM_WORLD);
+        CAN_Send_neighbour_list(&temp_voisins,RES_INIT_NEIGHBOUR , main_loop_from, MPI_COMM_WORLD);
+        list_clear(&temp_voisins, free_neighbour_cb);
         printf("je suis %d , transaction fini avec %d \n",com_rank, wait_for);
         wait_for = -1;
       }
-        //void neighbour_to_buffer(list *l, unsigned int *buffer[MAX_SIZE_BUFFER])
 
       else if(main_loop_tag == LOCALIZE) {
         corresp = main_loop_buffer_int[0];
@@ -398,6 +422,32 @@ int main(int argc, char**argv) {
   return 0;
 }
 
+int CAN_Send_neighbour(const neighbour *neighbour,int mpi_tag ,int mpi_destinataire , MPI_Comm comm) {
+  unsigned int buffer[5], size = (sizeof(neighbour) / sizeof(unsigned int));
+  buffer[0] = neighbour->x;
+  buffer[1] = neighbour->y;
+  buffer[2] = neighbour->size;
+  buffer[3] = neighbour->orientation;
+  buffer[4] = neighbour->com_rank;
+  MPI_Send(&buffer[0], size ,MPI_UNSIGNED ,mpi_destinataire, mpi_tag, comm);
+  return 1;
+}
+
+int CAN_Send_neighbour_list(const list *l ,int mpi_tag ,int mpi_destinataire , MPI_Comm comm) {
+  unsigned int buffer[MAX_SIZE_BUFFER], size = l->nb_elem * (sizeof(neighbour) / sizeof(unsigned int));
+  neighbour_to_buffer(l, buffer);
+  MPI_Send(&buffer[0], size ,MPI_UNSIGNED ,mpi_destinataire, mpi_tag, comm);
+  return 1;
+}
+
+//MPI_Recv(&main_loop_buffer_int[0] ,count, MPI_INT, main_loop_from, main_loop_tag, MPI_COMM_WORLD, &main_loop_status);
+int CAN_Receive_neighbour(neighbour *neighbour,int mpi_tag ,int mpi_src , MPI_Comm comm ) {
+  unsigned int buffer[5], size = (sizeof(neighbour) / sizeof(unsigned int));
+  MPI_Recv(&buffer[0], size, MPI_UNSIGNED,mpi_src, mpi_tag, comm, MPI_STATUS_IGNORE);
+  init_neighbour(neighbour, buffer[0], buffer[1], buffer[2],buffer[3], buffer[4]);
+  return 1;
+}
+
 void CAN_Recv_localise(int *loc ,const pair *pair, int self_rank , int first_node ,MPI_Comm comm) {
   MPI_Status status;
   int *buffer = (int*) malloc(sizeof(int) * 3);
@@ -405,7 +455,7 @@ void CAN_Recv_localise(int *loc ,const pair *pair, int self_rank , int first_nod
   buffer[1] = pair->x;
   buffer[2] = pair->y;
   MPI_Send(&(buffer[0]), 3, MPI_INT, first_node, LOCALIZE, comm);
-  MPI_Recv(loc, 1, MPI_INT, MPI_ANY_SOURCE, LOCALIZE_RESP, comm, &status);
+  MPI_Recv(loc, 1, MPI_UNSIGNED, MPI_ANY_SOURCE, LOCALIZE_RESP, comm, &status);
   free(buffer);
 }
 
@@ -488,7 +538,7 @@ void split_land_update_neighbour(land *new_land , land *old_land, list *new_n ,l
   new.com_rank = old_rank;
   for(int i = 0; i < old_n->nb_elem; i++) {
     list_get_index(old_n,i ,&temp);
-    printf(" %u , %u ,%u,%u,%u \n", temp.x, temp.y, temp.size, temp.orientation, temp.com_rank);
+    printf("voisins n %d \n" , i);
     print_neighbour(&temp);
     if(is_neigbour(new_land , &temp)) {
       adjust_neighbour(new_land, &temp);
@@ -496,13 +546,17 @@ void split_land_update_neighbour(land *new_land , land *old_land, list *new_n ,l
     }
     list_get_index(old_n,i ,&temp);
     if(is_neigbour(old_land , &temp)) {
-      print_neighbour(&temp);
       adjust_neighbour(old_land, &temp);
     }
   }
 
   list_add_front(old_n, &old);
   list_add_front(new_n, &new);
+
+  printf("affichage de la liste des voisins du nouveau noeud ! \n");
+  list_apply(new_n, print_neighbour_cb);
+  printf("affichage de la liste de mes nouveau voisins ! \n");
+  list_apply(old_n, print_neighbour_cb);
 }
 
 void land_extract_neighbourg_after_split(land *land1, land * land2, neighbour *n1, neighbour *n2) {
@@ -651,7 +705,7 @@ int is_neigbour(const land *land,const neighbour *n) {
   }
 }
 
-void neighbour_to_buffer(list *l, unsigned int buffer[MAX_SIZE_BUFFER]) {
+void neighbour_to_buffer(const list *l, unsigned int buffer[MAX_SIZE_BUFFER]) {
   neighbour temp;
   int idx = 0;
   for(int i = 0; i < l->nb_elem; i++) {
@@ -709,6 +763,23 @@ void print_neighbour(const neighbour *n) {
   }
 }
 
+void free_neighbour_cb(void *n) {
+  neighbour elem = *((neighbour *) n);
+}
+
+void print_neighbour_cb(void *n) {
+  neighbour elem = *((neighbour *) n);
+  print_neighbour(&elem);
+}
+
+void list_apply(const list *l, void(*cb)(void * data)) {
+  cell *current = l->first;
+  for(int i = 0 ; i < l->nb_elem; i++) {
+    cb(current->data);
+    current = current->next;
+  }
+}
+
 void init_list(list *l, unsigned int element_size) {
   l->nb_elem = 0;
   l->first = NULL;
@@ -735,6 +806,18 @@ int list_get_index(const list *l,int i, void *data) {
   }
   memcpy(data, current->data, l->element_size);
   return 1;
+}
+
+void list_clear(list *l, void(*free_function)(void *data)) {
+  cell *current = l->first, *temp;
+  for(int i = 0 ; i < l->nb_elem; i++) {
+    free_function(current->data);
+    temp = current;
+    current = current->next;
+    free(current);
+  }
+  l->first = NULL;
+  l->nb_elem = 0;
 }
 
 void log_factory(FILE *f, const void *data, int CODE, int from) {
