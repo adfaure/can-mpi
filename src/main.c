@@ -210,6 +210,16 @@ void list_add_front(list * l, void *elem);
 
 void init_list(list *l, unsigned int element_size);
 
+int list_get_index_ptr(const list *l,int i, void *data);
+
+void print_neighbour_cb(void *n);
+
+void free_neighbour_cb(void *);
+
+void list_apply(const list *l, void(*cb)(void * data));
+
+void list_clear(list *l, void(*free_function)(void *data));
+
 void land_extract_neighbourg_after_split(land *land1, land * land2, neighbour *n1, neighbour *n2);
 
 void adjust_neighbour(land *land, neighbour *n);
@@ -223,12 +233,6 @@ void neighbour_to_buffer(const list *l, unsigned int buffer[MAX_SIZE_BUFFER]);
 void log_factory(FILE *f,const void *data, int CODE, int from);
 
 double entire_dist_neigbourg(int x1, int y1, const neighbour *neighbour);
-
-void print_neighbour_cb(void *n);
-void free_neighbour_cb(void *);
-void list_apply(const list *l, void(*cb)(void * data));
-
-void list_clear(list *l, void(*free_function)(void *data));
 
 int main(int argc, char**argv) {
   FILE *file;
@@ -398,6 +402,7 @@ int main(int argc, char**argv) {
         MPI_Send(&land_buffer[0], 4, MPI_UNSIGNED, main_loop_from, REQUEST_RECEIVE_LAND, MPI_COMM_WORLD );
         CAN_Send_neighbour_list(&temp_voisins,RES_INIT_NEIGHBOUR , main_loop_from, MPI_COMM_WORLD);
         list_clear(&temp_voisins, free_neighbour_cb);
+        printf("SEG FAULT %d !!!!!!!!!!!!!!!!!!!!!\n " ,com_rank );
         printf("je suis %d , transaction fini avec %d \n",com_rank, wait_for);
         wait_for = -1;
       }
@@ -538,8 +543,6 @@ void split_land_update_neighbour(land *new_land , land *old_land, list *new_n ,l
   new.com_rank = old_rank;
   for(int i = 0; i < old_n->nb_elem; i++) {
     list_get_index(old_n,i ,&temp);
-    printf("voisins n %d \n" , i);
-    print_neighbour(&temp);
     if(is_neigbour(new_land , &temp)) {
       adjust_neighbour(new_land, &temp);
       list_add_front(new_n, &temp);
@@ -692,15 +695,21 @@ void init_neighbour(neighbour *n, unsigned int x, unsigned int y, unsigned int s
 }
 
 int is_neigbour(const land *land,const neighbour *n) {
+    printf(" is neigh ");
   if(is_neigbour_top(land, n)) {
+    printf(" is TOP \n");
     return VOISIN_TOP;
   } else if (is_neigbour_bot(land, n)) {
+    printf(" is BOT \n");
     return VOISIN_BOT;
   } else if(is_neigbour_left(land, n)) {
+    printf(" is LEFT \n");
     return VOISIN_LEFT;
   } else if(is_neigbour_right(land, n)) {
+    printf(" is RIGHT \n");
     return VOISIN_RIGHT;
   } else {
+    printf(" is NONE \n");
     return VOISIN_NONE;
   }
 }
@@ -720,34 +729,33 @@ void neighbour_to_buffer(const list *l, unsigned int buffer[MAX_SIZE_BUFFER]) {
 }
 
 bool is_neigbour_top(const land *land, const neighbour *n) {
-    if(n->orientation == VOISIN_V)
+    if(n->orientation == VOISIN_H)
       return false;
 
-    bool temp = (land->x < n->x && land->x + land->size_x > n->x) || (land->x < n->x + n->size  && land->x + land->size_x > n->x + n->size );
+    bool temp = (land->x <= n->x && land->x + land->size_x >= n->x) || (land->x <= n->x + n->size  && land->x + land->size_x >= n->x + n->size );
     return temp && (land->y == n->y);
 }
 
 bool is_neigbour_bot(const land *land, const neighbour *n) {
-    if(n->orientation == VOISIN_V)
+    if(n->orientation == VOISIN_H)
       return false;
-
-    bool temp = (land->x < n->x && land->x + land->size_x > n->x) || (land->x < n->x + n->size && land->x + land->size_x > n->x + n->size);
+    bool temp = (land->x <= n->x && land->x + land->size_x <= n->x) || (land->x <= n->x + n->size && land->x + land->size_x >= n->x + n->size);
     return temp && (n->y == land->y + land->size_y);
 }
 
 bool is_neigbour_left(const land *land, const neighbour *n) {
-    if(n->orientation == VOISIN_H)
+    if(n->orientation == VOISIN_V)
       return false;
 
-    bool temp = (land->y < n->y && land->y + land->size_y > n->y) || (land->y < n->y + n->size  && land->y + land->size_y > n->y + n->size);
+    bool temp = (land->y <= n->y && land->y + land->size_y >= n->y) || (land->y <= n->y + n->size  && land->y + land->size_y >= n->y + n->size);
     return temp && (n->x == land->x);
 }
 
 bool is_neigbour_right(const land *land, const neighbour *n) {
-    if(n->orientation == VOISIN_H)
+    if(n->orientation == VOISIN_V)
       return false;
 
-    bool temp = (land->y < n->y && land->y + land->size_y > n->y) || (land->y < n->y + n->size  && land->y + land->size_y > n->y + n->size );
+    bool temp = (land->y <= n->y && land->y + land->size_y >= n->y) || (land->y <= n->y + n->size  && land->y + land->size_y >= n->y + n->size );
     return temp && (n->x == land->x + land->size_x);
 }
 
@@ -805,6 +813,18 @@ int list_get_index(const list *l,int i, void *data) {
     acc++;
   }
   memcpy(data, current->data, l->element_size);
+  return 1;
+}
+
+int list_get_index_ptr(const list *l,int i, void *data) {
+  if (i >= l->nb_elem || i < 0 ) return 0;
+  cell *current = l->first;
+  int acc = 0;
+  while(acc != i){
+    current = current->next;
+    acc++;
+  }
+  data = current;
   return 1;
 }
 
