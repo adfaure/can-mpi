@@ -144,8 +144,6 @@ void test_IS_NEIGHBOUR_BOT(void) {
   CU_ASSERT(is_neighbour_bot(&l, &n));
 
   init_land(&l, 0, 0, 490, 500);
-  print_land(&l);
-  print_neighbour(&n);
   CU_ASSERT(!is_neighbour_bot(&l, &n));
 }
 
@@ -176,8 +174,6 @@ void test_IS_OVER_NEIGHBOUR_END(void) {
   neighbour n2;
   init_neighbour(&n1, 250, 250, 500, VOISIN_H, 0);
   init_neighbour(&n2, 250, 250, 600, VOISIN_H, 0); // ça déborde à droite
-  print_neighbour(&n1);
-  print_neighbour(&n2);
 
   // celui çi devrait être vrai car doit retourner vrai si
   // n1 : x--------------x

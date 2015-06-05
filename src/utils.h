@@ -75,7 +75,7 @@ typedef struct _list {
  * initialise une liste simplement chainée
  * @param element_size : taille de l'élément que l'on va stocker
  */
- void init_list(list *l, unsigned int element_size);
+void init_list(list *l, unsigned int element_size);
 
 /**
  * Ajoute un élément en tête de la liste
