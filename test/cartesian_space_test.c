@@ -147,6 +147,64 @@ void test_IS_NEIGHBOUR_BOT(void) {
   CU_ASSERT(!is_neighbour_bot(&l, &n));
 }
 
+void test_IS_NEIGHBOUR_TOP(void) {
+  neighbour n;
+  land l;
+  init_neighbour(&n, 0, 0, 500, VOISIN_H, 0);
+
+  init_land(&l, 0, 0, 500, 500);
+  CU_ASSERT(is_neighbour_top(&l, &n));
+
+  init_land(&l, 0, 0, 600, 500);
+  CU_ASSERT(is_neighbour_top(&l, &n));
+
+  init_neighbour(&n, 500, 0, 500, VOISIN_H, 0);
+  init_land(&l, 499, 0, 501, 500);
+  CU_ASSERT(is_neighbour_top(&l, &n));
+
+  init_land(&l, 0, 0, 490, 500);
+  CU_ASSERT(!is_neighbour_top(&l, &n));
+}
+
+void test_IS_NEIGHBOUR_LEFT(void) {
+  neighbour n;
+  land l;
+  init_neighbour(&n, 0, 0, 500, VOISIN_V, 0);
+
+  init_land(&l, 0, 0, 500, 500);
+  CU_ASSERT(is_neighbour_left(&l, &n));
+
+  init_land(&l, 0, 0, 600, 500);
+  CU_ASSERT(is_neighbour_left(&l, &n));
+
+  init_neighbour(&n, 500, 0, 500, VOISIN_V, 0);
+  init_land(&l, 499, 0, 501, 500);
+  CU_ASSERT(!is_neighbour_left(&l, &n));
+
+  init_land(&l, 0, 0, 490, 500);
+  CU_ASSERT(!is_neighbour_left(&l, &n));
+}
+
+void test_IS_NEIGHBOUR_RIGHT(void) {
+  neighbour n;
+  land l;
+  init_neighbour(&n, 500, 0, 500, VOISIN_V, 0);
+
+  init_land(&l, 0, 0, 500, 500);
+  CU_ASSERT(is_neighbour_right(&l, &n));
+
+  init_neighbour(&n, 600, 0, 500, VOISIN_V, 0);
+  init_land(&l, 0, 0, 600, 500);
+  CU_ASSERT(is_neighbour_right(&l, &n));
+
+  init_neighbour(&n, 500, 0, 500, VOISIN_V, 0);
+  init_land(&l, 499, 0, 501, 500);
+  CU_ASSERT(!is_neighbour_right(&l, &n));
+
+  init_land(&l, 0, 0, 490, 500);
+  CU_ASSERT(!is_neighbour_right(&l, &n));
+}
+
 void test_IS_CONTAINS_NEIGHBOUR(void) {
 
   //   500            1000
@@ -181,8 +239,8 @@ void test_IS_OVER_NEIGHBOUR_END(void) {
   CU_ASSERT(is_over_neighbour_end(&n1, &n2)); // failed
 
   // de toute façon l'un des trois devrait etre vrai :///
-  CU_ASSERT(is_contains_neighbour(&n1, &n2));
-  CU_ASSERT(is_over_neighbour_begin(&n1, &n2));
+  CU_ASSERT(!is_contains_neighbour(&n1, &n2));
+  CU_ASSERT(!is_over_neighbour_begin(&n1, &n2));
 }
 
 /* The main() function for setting up and running the tests.
@@ -213,6 +271,9 @@ int main()
      (NULL == CU_add_test(pSuite, "test of is_land_contains_pair()", test_IS_LAND_CONTAINS_PAIR)) ||
      (NULL == CU_add_test(pSuite, "test of split_land()", test_SPLIT_LAND)) ||
      (NULL == CU_add_test(pSuite, "test of is_neighbour_bot()", test_IS_NEIGHBOUR_BOT)) ||
+     (NULL == CU_add_test(pSuite, "test of is_neighbour_top()", test_IS_NEIGHBOUR_TOP)) ||
+     (NULL == CU_add_test(pSuite, "test of is_neighbour_left()", test_IS_NEIGHBOUR_LEFT)) ||
+     (NULL == CU_add_test(pSuite, "test of is_neighbour_right()", test_IS_NEIGHBOUR_RIGHT)) ||
      (NULL == CU_add_test(pSuite, "test of is_contains_neighbour()", test_IS_CONTAINS_NEIGHBOUR)) ||
      (NULL == CU_add_test(pSuite, "test of is_contains_neighbour_end()", test_IS_OVER_NEIGHBOUR_END))
 
