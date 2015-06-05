@@ -341,7 +341,7 @@ int is_over_neighbour_end(const neighbour *n1, const neighbour *n2) {
     ind_beg1 = n1->x;
     ind_beg2 = n2->x;
   }
-  return (ind_beg1 < ind_beg2) && (ind_max2 > ind_max1);
+  return (ind_beg1 <= ind_beg2) && (ind_max2 > ind_max1);
 }
 
 // return true if
@@ -362,7 +362,7 @@ int is_over_neighbour_begin(const neighbour *n1, const neighbour *n2) {
     ind_beg1 = n1->x;
     ind_beg2 = n2->x;
   }
-  return (ind_beg1 > ind_beg2) && (ind_max2 < ind_max1);
+  return (ind_beg1 >= ind_beg2) && (ind_max2 < ind_max1);
 }
 
 void free_neighbour_cb(void *n) {

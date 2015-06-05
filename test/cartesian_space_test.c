@@ -181,8 +181,8 @@ void test_IS_OVER_NEIGHBOUR_END(void) {
   CU_ASSERT(is_over_neighbour_end(&n1, &n2)); // failed
 
   // de toute façon l'un des trois devrait etre vrai :///
-  CU_ASSERT(is_contains_neighbour(&n1, &n2));
-  CU_ASSERT(is_over_neighbour_begin(&n1, &n2));
+  CU_ASSERT(!is_contains_neighbour(&n1, &n2));
+  CU_ASSERT(!is_over_neighbour_begin(&n1, &n2));
 }
 
 /* The main() function for setting up and running the tests.
