@@ -7,6 +7,7 @@
 #include <math.h>
 
 #include "utils.h"
+#include "cartesian_space.h"
 
 //root process
 #define ROOT_PROCESS 0
