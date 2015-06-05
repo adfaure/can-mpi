@@ -15,7 +15,7 @@ obj/cartesian_space.o: src/cartesian_space.c
 test: obj/utils.o obj/can_communication.o obj/cartesian_space.o
 	mpicc obj/*.o test/cartesian_space_test.c -o test/exe/cartesian_space_test -lm -lcunit
 
-runtest: test
+runtest: test obj/utils.o obj/can_communication.o obj/cartesian_space.o
 	test/exe/cartesian_space_test
 clean:
 		rm -f obj/*.o test/exe/* mpi_can

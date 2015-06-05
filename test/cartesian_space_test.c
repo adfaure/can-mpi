@@ -27,7 +27,7 @@ void test_INIT_NEIGHBOUR(void) {
   CU_ASSERT(n.x == x);
   CU_ASSERT(n.y == y);
   CU_ASSERT(n.size == size);
-  CU_ASSERT(n.com_rank == comm_rank);
+  CU_ASSERT(n.com_rank = comm_rank);
   CU_ASSERT(n.orientation == orientation);
 }
 
