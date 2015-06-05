@@ -1,0 +1,1 @@
+-Wall -Wextra -Wshadow -pedantic -Wstrict-aliasing -std=gnu11

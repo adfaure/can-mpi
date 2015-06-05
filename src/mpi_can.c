@@ -1,13 +1,4 @@
-#include <mpi.h>
-#include <stdio.h>
-#include <time.h>
-#include <stdlib.h>
-#include <sys/time.h>
-#include <string.h>
-#include <math.h>
-
-#include "utils.h"
-#include "cartesian_space.h"
+#include "mpi_can.h"
 
 //root process
 #define ROOT_PROCESS 0

@@ -83,7 +83,7 @@ int adjust_neighbour(land *land, neighbour *n) {
 }
 
 void land_extract_neighbourg_after_split(land *land1, land * land2, neighbour *n1, neighbour *n2) {
-  if(land1->x == land2->x) // alors ils sont l'un au dessu de l'autre
+  if(land1->x == land2->x) // alors ils sont l'un au dessus de l'autre
   {
     n1->size = land1->size_x;
     n2->size = land1->size_x;
@@ -288,12 +288,11 @@ int update_border(neighbour *n1, const neighbour *n2) {
   return 1;
 }
 
-int is_over_neighbour(const neighbour *n1,const neighbour *n2) {
+int is_over_neighbour(const neighbour *n1, const neighbour *n2) {
   if(n1->orientation != n2->orientation)
     return false;
   return (is_contains_neighbour(n1, n2) || is_over_neighbour_begin(n1, n2) || is_over_neighbour_end(n1, n2));
 }
-
 
 int are_over_neighbour(const neighbour *n1,const neighbour *n2) {
   if(n1->orientation != n2->orientation)
