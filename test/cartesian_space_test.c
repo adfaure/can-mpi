@@ -128,7 +128,7 @@ void test_SPLIT_LAND(void) {
   CU_ASSERT(!is_land_contains(&new, 999, 500));
 }
 
-void test_IS_NEIGHBOUR_TOP(void) {
+void test_IS_NEIGHBOUR_BOT(void) {
   neighbour n;
   land l;
   init_neighbour(&n, 0, 500, 500, VOISIN_H, 0);
@@ -170,6 +170,24 @@ void test_IS_CONTAINS_NEIGHBOUR(void) {
   CU_ASSERT(!is_contains_neighbour(&n1, &n2));
 }
 
+void test_IS_OVER_NEIGHBOUR_END(void) {
+
+  neighbour n1;
+  neighbour n2;
+  init_neighbour(&n1, 250, 250, 500, VOISIN_H, 0);
+  init_neighbour(&n2, 250, 250, 600, VOISIN_H, 0); // ça déborde à droite
+  print_neighbour(&n1);
+  print_neighbour(&n2);
+
+  // celui çi devrait être vrai car doit retourner vrai si
+  // n1 : x--------------x
+  // n2 :         x-------------x
+  CU_ASSERT(is_over_neighbour_end(&n1, &n2)); // failed
+
+  // de toute façon l'un des trois devrait etre vrai :///
+  CU_ASSERT(is_contains_neighbour(&n1, &n2));
+  CU_ASSERT(is_over_neighbour_begin(&n1, &n2));
+}
 
 /* The main() function for setting up and running the tests.
  * Returns a CUE_SUCCESS on successful running, another
@@ -198,8 +216,9 @@ int main()
      (NULL == CU_add_test(pSuite, "test of is_land_contains()", test_IS_LAND_CONTAINS)) ||
      (NULL == CU_add_test(pSuite, "test of is_land_contains_pair()", test_IS_LAND_CONTAINS_PAIR)) ||
      (NULL == CU_add_test(pSuite, "test of split_land()", test_SPLIT_LAND)) ||
-     (NULL == CU_add_test(pSuite, "test of is_neighbour_top()", test_IS_NEIGHBOUR_TOP)) ||
-     (NULL == CU_add_test(pSuite, "test of is_contains_neighbour()", test_IS_CONTAINS_NEIGHBOUR))
+     (NULL == CU_add_test(pSuite, "test of is_neighbour_bot()", test_IS_NEIGHBOUR_BOT)) ||
+     (NULL == CU_add_test(pSuite, "test of is_contains_neighbour()", test_IS_CONTAINS_NEIGHBOUR)) ||
+     (NULL == CU_add_test(pSuite, "test of is_contains_neighbour()", test_IS_OVER_NEIGHBOUR_END))
 
      ) {
       CU_cleanup_registry();

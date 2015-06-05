@@ -6,7 +6,7 @@
 /**
  *
  */
-void CAN_Recv_localise(int *loc, const pair *pair, int self_rank, int first_node, MPI_Comm comm);
+void CAN_Recv_localise(int *loc, const pair *_pair, int self_rank, int first_node, MPI_Comm comm);
 
 /**
  *
