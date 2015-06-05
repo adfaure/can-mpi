@@ -72,7 +72,7 @@ void list_add_front(list * l, void *elem) {
   l->nb_elem++;
 }
 
-int list_get_index(const list *l,int i, void *data) {
+int list_get_index(const list *l, int i, void *data) {
   if (i >= l->nb_elem || i < 0 ) return 0;
   cell *current = l->first;
   int acc = 0;
@@ -85,10 +85,10 @@ int list_get_index(const list *l,int i, void *data) {
 }
 
 int list_replace_index(list * l, int i ,const void *data) {
-  if (i >= l->nb_elem || i < 0 ) return 0;
+  if (i >= l->nb_elem || i < 0) return 0;
   cell *current = l->first;
   int acc = 0;
-  while(acc != i){
+  while(acc != i) {
     current = current->next;
     acc++;
   }

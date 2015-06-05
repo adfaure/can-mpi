@@ -74,6 +74,7 @@ typedef struct _list {
 /**
  * initialise une liste simplement chainée
  * @param element_size : taille de l'élément que l'on va stocker
+ * TESTED
  */
 void init_list(list *l, unsigned int element_size);
 
@@ -82,12 +83,14 @@ void init_list(list *l, unsigned int element_size);
  *
  * @pre l est une liste initialisée
  * @post l est de taille +1
+ * TESTED
  */
 void list_add_front(list *l, void *data);
 
 /**
  * Récupère dans @data le i-ème élément de la liste
  * Retourne 0 si ok, sinon -1
+ * TESTED
  */
 int list_get_index(const list *l, int i, void *data);
 

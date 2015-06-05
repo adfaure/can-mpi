@@ -214,7 +214,7 @@ int main()
      (NULL == CU_add_test(pSuite, "test of split_land()", test_SPLIT_LAND)) ||
      (NULL == CU_add_test(pSuite, "test of is_neighbour_bot()", test_IS_NEIGHBOUR_BOT)) ||
      (NULL == CU_add_test(pSuite, "test of is_contains_neighbour()", test_IS_CONTAINS_NEIGHBOUR)) ||
-     (NULL == CU_add_test(pSuite, "test of is_contains_neighbour()", test_IS_OVER_NEIGHBOUR_END))
+     (NULL == CU_add_test(pSuite, "test of is_contains_neighbour_end()", test_IS_OVER_NEIGHBOUR_END))
 
      ) {
       CU_cleanup_registry();
