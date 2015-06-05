@@ -306,7 +306,6 @@ int are_over_neighbour(const neighbour *n1,const neighbour *n2) {
 // n2    x-------x
 int is_contains_neighbour(const neighbour *n1,const neighbour *n2) {
   int ind_max1, ind_max2, ind_beg1, ind_beg2;
-  bool temp;
   if(n1->orientation != n2->orientation)
     return false;
   if(n1->orientation ==  VOISIN_V) {
@@ -328,7 +327,6 @@ int is_contains_neighbour(const neighbour *n1,const neighbour *n2) {
 // n2 :         x-------------x
 int is_over_neighbour_end(const neighbour *n1,const neighbour *n2) {
   int ind_max1, ind_max2, ind_beg1, ind_beg2;
-  bool temp;
   if(n1->orientation != n2->orientation)
     return false;
   if(n1->orientation ==  VOISIN_V) {
@@ -350,7 +348,6 @@ int is_over_neighbour_end(const neighbour *n1,const neighbour *n2) {
 // n2 : x--------------x
 int is_over_neighbour_begin(const neighbour *n1,const neighbour *n2) {
   int ind_max1, ind_max2, ind_beg1, ind_beg2;
-  bool temp;
   if(n1->orientation != n2->orientation)
     return false;
   if(n1->orientation ==  VOISIN_V) {

@@ -98,18 +98,6 @@ int list_replace_index(list * l, int i ,const void *data) {
   return 1;
 }
 
-int list_get_index_ptr(const list *l,int i, void **data) {
-  if (i >= l->nb_elem || i < 0 ) return 0;
-  cell *current = l->first;
-  int acc = 0;
-  while(acc != i){
-    current = current->next;
-    acc++;
-  }
-  *data = current;
-  return 1;
-}
-
 void list_clear(list *l, void(*free_function)(void *data)) {
   cell *current = l->first, *temp;
   if(l->first == NULL)
