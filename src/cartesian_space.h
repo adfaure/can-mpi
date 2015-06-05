@@ -121,4 +121,10 @@ void free_land(land *l);
  */
 void print_land(const land *l);
 
+
+/**
+ * Journalise dans un fichier de log
+ */
+void log_factory(FILE *f, const void *data, int CODE, int from);
+
 #endif
