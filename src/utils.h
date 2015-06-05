@@ -72,62 +72,70 @@ typedef struct _list {
 } list;
 
 /**
- * init a generique liste
+ * initialise une liste simplement chainée
+ * @param element_size : taille de l'élément que l'on va stocker
  */
  void init_list(list *l, unsigned int element_size);
 
 /**
- * add elem in a generique list
+ * Ajoute un élément en tête de la liste
+ *
+ * @pre l est une liste initialisée
+ * @post l est de taille +1
  */
-void list_add_front(list *l, void *data );
+void list_add_front(list *l, void *data);
 
 /**
- * get elemnt i of the list return 0 if something wrong;
+ * Récupère dans @data le i-ème élément de la liste
+ * Retourne 0 si ok, sinon -1
  */
-int list_get_index(const  list *l,int i, void *data);
+int list_get_index(const list *l, int i, void *data);
 
 /**
- * Get a pair with random value between [min, max]
+ * Récupère dans @p une valeur aléatoire dans [min, max]
  */
 void get_random_id(pair *p, int min, int max);
 
 /**
- * Init a pair
+ * Initiatise un couple de coordonnées
  */
-void init_pair(pair *, int x, int y);
+void init_pair(pair *p, int x, int y);
 
 /**
- * affiche une pair sur la sortie standard
+ * Affiche une pair sur la sortie standard
  */
 void print_pair(const pair *p);
 
 /**
- *
+ * Allocateur d'un tableau contigue en mémoire de taille @rows x @cols x sizeof(int)
  */
 int **alloc_2d_int(int rows, int cols);
 
 /**
- *
+ * Allocateur d'un tableau contigue en mémoire de taille @rows x @cols x sizeof(float)
  */
 float **alloc_2d_float(int rows, int cols);
 
 /**
- *
+ * Retourne un timestamp en millisecondes (nb de millisec depus 01-01-1970)
  */
 long long now();
 
-void list_add_front(list * l, void *elem);
-
-void init_list(list *l, unsigned int element_size);
-
-int list_get_index_ptr(const list *l,int i, void **data);
-
+/**
+ * Applique une fonction à chaque élément de la liste
+ *  Ne modifie pas la liste
+ */
 void list_apply(const list *l, void(*cb)(void * data));
 
+/**
+ * Prend une fonction de callback pour désalouer chaque élement de la liste
+ * puis désaloue la liste et place le nombre d'élément à 0
+ */
 void list_clear(list *l, void(*free_function)(void *data));
 
-int list_replace_index(list * l, int i ,const void *data);
-
-void log_factory(FILE *f,const void *data, int CODE, int from);
+/**
+ * Remplace le i-ème élément de la liste par l'élément @data
+ */
+int list_replace_index(list *l, int i, const void *data);
 
 #endif
