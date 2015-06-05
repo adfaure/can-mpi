@@ -1,8 +1,8 @@
 #include "utils.h"
 
-void get_random_id(pair *p, int min, int max) {
-  p->x = rand() % (max - min + 1) + min;
-  p->y = rand() % (max - min + 1) + min;
+void get_random_id(pair *p, int max_x, int max_y) {
+  p->x = rand() % max_x;
+  p->y = rand() % max_y;
 }
 
 void init_pair(pair *p, int x, int y) {

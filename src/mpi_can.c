@@ -79,7 +79,7 @@ int main(int argc, char**argv) {
     }
 
   } else {
-    get_random_id(&pair_id, SIZE_X, SIZE_Y);
+    get_random_id(&pair_id, SIZE_X, SIZE_Y); // TODO CHECKME
     while(1) {
       list_clear(&temp_voisins, free_neighbour_cb);
       if(wait_for != -1) {

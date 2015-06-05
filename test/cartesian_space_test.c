@@ -134,7 +134,19 @@ void test_IS_NEIGHBOUR_TOP(void) {
   init_neighbour(&n, 0, 500, 500, VOISIN_H, 0);
 
   init_land(&l, 0, 0, 500, 500);
-  CU_ASSERT(is_neighbour_top(&l, &n));
+  CU_ASSERT(is_neighbour_bot(&l, &n));
+
+  init_land(&l, 0, 0, 600, 500);
+  CU_ASSERT(is_neighbour_bot(&l, &n));
+
+  init_neighbour(&n, 500, 500, 500, VOISIN_H, 0);
+  init_land(&l, 499, 0, 501, 500);
+  CU_ASSERT(is_neighbour_bot(&l, &n));
+
+  init_land(&l, 0, 0, 490, 500);
+  print_land(&l);
+  print_neighbour(&n);
+  CU_ASSERT(!is_neighbour_bot(&l, &n));
 }
 
 

@@ -92,9 +92,9 @@ void list_add_front(list *l, void *data);
 int list_get_index(const list *l, int i, void *data);
 
 /**
- * Récupère dans @p une valeur aléatoire dans [min, max]
+ * Récupère dans @p des valeurs aléatoires dans [0, max_x] et [0, max_y]
  */
-void get_random_id(pair *p, int min, int max);
+ void get_random_id(pair *p, int max_x, int max_y);
 
 /**
  * Initiatise un couple de coordonnées
