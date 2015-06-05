@@ -55,7 +55,7 @@
      _a > _b ? _a : _b; })
 
 typedef struct _pair {
-  int x, y;
+  unsigned int x, y;
 } pair;
 
 typedef enum { false, true } bool;

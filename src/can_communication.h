@@ -6,11 +6,11 @@
 /**
  *
  */
-void CAN_Recv_localise(int *loc ,const pair *pair, int self_rank, int first_node, MPI_Comm comm);
+void CAN_Recv_localise(int *loc, const pair *pair, int self_rank, int first_node, MPI_Comm comm);
 
 /**
  *
  */
-void CAN_Recv_localise_timeout(int *loc ,const pair *pair, int self_rank, int first_node ,MPI_Comm comm, long long timeout);
+void CAN_Recv_localise_timeout(int *loc, const pair *pair, int self_rank, int first_node, MPI_Comm comm, unsigned int timeout);
 
 #endif

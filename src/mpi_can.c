@@ -16,17 +16,18 @@ int main(int argc, char**argv) {
     return 0;
   }
   fprintf(file, "log \n");
-  int nb_proc, com_rank,node_number , i, corresp, localise;
+  int nb_proc, com_rank, i, corresp;
   unsigned int land_buffer[4] , buffer_ui[MAX_SIZE_BUFFER], buffer_simple_int = 0;
   int wait_for = -1;
-  int main_loop_tag, main_loop_from, count, main_loop_buffer_int[MAX_SIZE_BUFFER], send_int_buffer[MAX_SIZE_BUFFER], wait_array[2]; // wait_array on attend un message d'une source avec un tag
-  bool bootstrap = false, active = false, is_waiting = false;
+  unsigned int main_loop_from;
+  int main_loop_tag, count, main_loop_buffer_int[MAX_SIZE_BUFFER], send_int_buffer[MAX_SIZE_BUFFER]; // wait_array on attend un message d'une source avec un tag
+  bool bootstrap = false;
   list voisins, temp_voisins;
   neighbour neighbour_temp_find, temp_voisin;
   pair pair_id, pair_join_request;
   land land_id, new_land, temp_land;
   MPI_Status main_loop_status;
-  MPI_Request main_loop_request;
+
   MPI_Init (&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &nb_proc);
   MPI_Comm_rank(MPI_COMM_WORLD, &com_rank);
@@ -51,9 +52,10 @@ int main(int argc, char**argv) {
     }
 
     int dummy = 0;
-    for(int i = 0; i < 10000000; i++) {
-      dummy = i * i;
+    for(int j = 0; j < 10000000; ++j) {
+      dummy = j * j;
     }
+    dummy++;
 
     for(i = 0; i < nb_proc; i++) {
       if(i != ROOT_PROCESS) {

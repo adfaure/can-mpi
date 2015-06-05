@@ -47,7 +47,7 @@ int CAN_Send_neighbour_list(const list *l, int mpi_tag, int mpi_destinataire, MP
 /**
  * Initiatise un voisin en position @x, @y, de taille @size,
  *  avec l'orientation @or, et accessible via @com_rank
- * TODO test
+ * TESTED
  */
 void init_neighbour(neighbour *n, unsigned int x, unsigned int y, unsigned int size, unsigned int or, unsigned int com_rank);
 
@@ -58,27 +58,27 @@ void init_neighbour(neighbour *n, unsigned int x, unsigned int y, unsigned int s
  *
  * TODO test
  */
-int is_neigbour(const land *land, const neighbour *n);
+int is_neighbour(const land *land, const neighbour *n);
 
 /**
  * Retourne vrai une frontière en haut avec land possède un voisin neighbour sur sa frontière gauche.
  */
-bool is_neigbour_top(const land *land, const neighbour *n);
+bool is_neighbour_top(const land *land, const neighbour *n);
 
 /**
  * Retourne vrai une frontière en bas avec land possède un voisin neighbour sur sa frontière gauche.
  */
-bool is_neigbour_bot(const land *land, const neighbour *n);
+bool is_neighbour_bot(const land *land, const neighbour *n);
 
 /**
  * Retourne vrai une frontière a gauche avec land possède un voisin neighbour sur sa frontière gauche.
  */
-bool is_neigbour_left(const land *land, const neighbour *n);
+bool is_neighbour_left(const land *land, const neighbour *n);
 
 /**
  * Retourne vrai une frontière a droite avec land possède un voisin neighbour sur sa frontière gauche.
  */
-bool is_neigbour_right(const land *land, const neighbour *n);
+bool is_neighbour_right(const land *land, const neighbour *n);
 
 /**
  * Fonction de callback permettant d'afficher un neighbour
@@ -154,39 +154,43 @@ int is_over_neighbour_begin(const neighbour *n1, const neighbour *n2);
 
 /**
  * return true if the land cotains the point defined by x and y is
+ * TESTED
  */
 bool is_land_contains(const land *l, unsigned  int x, unsigned  int y);
 
 /**
  * return true if the land contains the pair
+ * TESTED
  */
 bool is_land_contains_pair(const land *l, const pair *p);
 
 /**
  * split old_land and init new_land initialized to the half of old_land
+ * TESTED
  */
 void split_land(land *new_land, land *old_land);
 
 /**
  *
+ * TODO TEST
  */
 void split_land_update_neighbour(land *new_land, land *old_land, list *new_n, list *old_n, int, int);
 
 /**
- *  init a land
+ *  allocateur d'un land
+ * TESTED
  */
 void init_land(land *l, unsigned  int x, unsigned  int y, unsigned int s_x, unsigned int s_y);
 
 /**
- *  init a land
+ *  Désalocation d'un land
  */
 void free_land(land *l);
 
 /**
- *
+ * Affichage d'un objet land
  */
 void print_land(const land *l);
-
 
 /**
  * Journalise dans un fichier de log
