@@ -57,7 +57,6 @@ int find_neighbour(const list *l, const pair *pair, neighbour *res );
 
 void neighbour_to_buffer(const list *l, unsigned int buffer[MAX_SIZE_BUFFER]);
 
-
 double entire_dist_neigbourg(int x1, int y1, const neighbour *neighbour);
 
 int update_neighbours(list *list,const land*land,  const neighbour *new_n);
@@ -82,9 +81,6 @@ int is_over_neighbour_end(const neighbour *n1,const neighbour *n2);
 // n1 :         x--------------x
 // n2 : x--------------x
 int is_over_neighbour_begin(const neighbour *n1,const neighbour *n2);
-
-
-
 
 /**
  * return true if the land cotains the point defined by x and y is
