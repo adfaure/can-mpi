@@ -114,16 +114,6 @@ float **alloc_2d_float(int rows, int cols);
 /**
  *
  */
-void CAN_Recv_localise(int *loc ,const pair *pair, int self_rank , int first_node ,MPI_Comm comm);
-
-/**
- *
- */
-void CAN_Recv_localise_timeout(int *loc ,const pair *pair, int self_rank , int first_node ,MPI_Comm comm, long long timeout);
-
-/**
- *
- */
 long long now();
 
 void list_add_front(list * l, void *elem);
