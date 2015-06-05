@@ -68,22 +68,26 @@ bool is_neighbour_top(const land *land, const neighbour *n);
 
 /**
  * Retourne vrai une frontière en bas avec land possède un voisin neighbour sur sa frontière gauche.
+ * TESTED
  */
 bool is_neighbour_bot(const land *land, const neighbour *n);
 
 /**
  * Retourne vrai une frontière a gauche avec land possède un voisin neighbour sur sa frontière gauche.
+ * TESTED
  */
 bool is_neighbour_left(const land *land, const neighbour *n);
 
 /**
  * Retourne vrai une frontière a droite avec land possède un voisin neighbour sur sa frontière gauche.
+ * TESTED
  */
 bool is_neighbour_right(const land *land, const neighbour *n);
 
 /**
  * Fonction de callback permettant d'afficher un neighbour
  * utile dans @list_apply
+ * TESTED
  */
 void print_neighbour_cb(void *n);
 
