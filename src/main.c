@@ -236,6 +236,29 @@ void log_factory(FILE *f,const void *data, int CODE, int from);
 
 double entire_dist_neigbourg(int x1, int y1, const neighbour *neighbour);
 
+int update_neighbours(list *list,const land*land,  const neighbour *new_n);
+
+int update_border(neighbour *n1, const neighbour *n2);
+
+int is_over_neighbour(const neighbour *n1,const neighbour *n2);
+
+int are_over_neighbour(const neighbour *n1,const neighbour *n2);
+
+// voisin 1 contien voisin 2
+// n1 x--------------x
+// n2    x-------x
+int is_contains_neighbour(const neighbour *n1,const neighbour *n2);
+
+// return true if
+// n1 : x--------------x
+// n2 :         x-------------x
+int is_over_neighbour_end(const neighbour *n1,const neighbour *n2);
+
+// return true if
+// n1 :         x--------------x
+// n2 : x--------------x
+int is_over_neighbour_begin(const neighbour *n1,const neighbour *n2);
+
 int main(int argc, char**argv) {
   FILE *file;
   file = fopen ("log.txt", "w+");
@@ -300,7 +323,6 @@ int main(int argc, char**argv) {
             init_neighbour(&temp_voisin, buffer_ui[idx], buffer_ui[idx+1], buffer_ui[idx+2],buffer_ui[idx+3], buffer_ui[idx+4]);
             list_add_front(&voisins, &temp_voisin);
             log_factory(file, &temp_voisin, NEIGHBOUR_LOG, i);
-            print_neighbour(&temp_voisin);
             idx += 5;
           }
         }
@@ -370,11 +392,11 @@ int main(int argc, char**argv) {
           idx += 5;
           list_add_front(&voisins, &temp_voisin);
           print_neighbour(&temp_voisin);
-          printf("MAJ des voisins !%d, %d, %d, %d \n",i, com_rank , temp_voisin.com_rank  , main_loop_from);
           if(main_loop_from == temp_voisin.com_rank ) {
             continue;
           }
           CAN_Send_neighbour(&temp_voisin,UPDATE_NEIGBOUR, temp_voisin.com_rank, MPI_COMM_WORLD );
+          print_neighbour(&temp_voisin);
         }
         printf("voisins recu \n");
         list_apply(&voisins, print_neighbour_cb);
@@ -384,6 +406,10 @@ int main(int argc, char**argv) {
       else if(main_loop_tag == UPDATE_NEIGBOUR) {
         CAN_Receive_neighbour(&temp_voisin, main_loop_tag, main_loop_from, MPI_COMM_WORLD);
         printf("Je suis %d, Mes amis je suis heureux de vous annoncer que nous acceuilons à présent un nouveau voisins [%d]! \n ", com_rank, main_loop_from);
+        print_neighbour(&temp_voisin);
+        update_neighbours(&voisins, &land_id ,&temp_voisin);
+        temp_voisin.com_rank = main_loop_from;
+        list_add_front(&voisins, &temp_voisin);
       }
 
       else if(main_loop_tag == RES_REQUEST_TO_JOIN) {
@@ -434,13 +460,13 @@ int main(int argc, char**argv) {
   return 0;
 }
 
-int CAN_Send_neighbour(const neighbour *neighbour,int mpi_tag ,int mpi_destinataire , MPI_Comm comm) {
-  unsigned int buffer[5], size = (sizeof(neighbour) / sizeof(unsigned int));
-  buffer[0] = neighbour->x;
-  buffer[1] = neighbour->y;
-  buffer[2] = neighbour->size;
-  buffer[3] = neighbour->orientation;
-  buffer[4] = neighbour->com_rank;
+int CAN_Send_neighbour(const neighbour *neig,int mpi_tag ,int mpi_destinataire , MPI_Comm comm) {
+  unsigned int buffer[5], size = (int) (sizeof(neighbour) / sizeof(unsigned int));
+  buffer[0] = neig->x;
+  buffer[1] = neig->y;
+  buffer[2] = neig->size;
+  buffer[3] = neig->orientation;
+  buffer[4] = neig->com_rank;
   MPI_Send(&buffer[0], size ,MPI_UNSIGNED ,mpi_destinataire, mpi_tag, comm);
   return 1;
 }
@@ -453,10 +479,11 @@ int CAN_Send_neighbour_list(const list *l ,int mpi_tag ,int mpi_destinataire , M
 }
 
 //MPI_Recv(&main_loop_buffer_int[0] ,count, MPI_INT, main_loop_from, main_loop_tag, MPI_COMM_WORLD, &main_loop_status);
-int CAN_Receive_neighbour(neighbour *neighbour,int mpi_tag ,int mpi_src , MPI_Comm comm ) {
-  unsigned int buffer[5], size = (sizeof(neighbour) / sizeof(unsigned int));
+int CAN_Receive_neighbour(neighbour *neig,int mpi_tag ,int mpi_src , MPI_Comm comm ) {
+  unsigned int buffer[5], size =  (sizeof(neighbour) / sizeof(unsigned int)) ;
+  printf("reception de %d ui \n",(int) size);
   MPI_Recv(&buffer[0], size, MPI_UNSIGNED,mpi_src, mpi_tag, comm, MPI_STATUS_IGNORE);
-  init_neighbour(neighbour, buffer[0], buffer[1], buffer[2],buffer[3], buffer[4]);
+  init_neighbour(neig, buffer[0], buffer[1], buffer[2],buffer[3], buffer[4]);
   return 1;
 }
 
@@ -557,11 +584,7 @@ void split_land_update_neighbour(land *new_land , land *old_land, list *new_n ,l
     list_get_index(old_n,i , &temp);
 
     if(is_neigbour(old_land , &temp)) {
-      printf("aaaaaaaaaaavant \n");
-      print_neighbour(&temp);
       if(adjust_neighbour(old_land, &temp)) {
-        printf("alooooooooooooooooooooooooooooooooooots \n");
-        print_neighbour(&temp);
         list_replace_index(old_n, i, &temp);
       }
     }
@@ -571,8 +594,6 @@ void split_land_update_neighbour(land *new_land , land *old_land, list *new_n ,l
 }
 
 int adjust_neighbour(land *land, neighbour *n) {
-  printf("in adjustre func \n");
-  print_neighbour(n);
   int changed = 0;
   if(n->orientation == VOISIN_H) {
     if(n->x < land->x) {
@@ -592,7 +613,6 @@ int adjust_neighbour(land *land, neighbour *n) {
     if(n->y < land->y) {
       n->size = n->size - (land->y - n->y);
       n->y = land->y;
-      print_neighbour(n);
       changed = 1;
     }
     if(n->y + n->size > land->y + land->size_y) {
@@ -738,8 +758,6 @@ void neighbour_to_buffer(const list *l, unsigned int buffer[MAX_SIZE_BUFFER]) {
   int idx = 0;
   for(int i = 0; i < l->nb_elem; i++) {
     list_get_index(l,i ,&temp);
-    printf("bufferization -----> ");
-    print_neighbour(&temp);
     buffer[idx]   = temp.x;
     buffer[idx+1] = temp.y;
     buffer[idx+2] = temp.size;
@@ -753,14 +771,14 @@ bool is_neigbour_top(const land *land, const neighbour *n) {
     if(n->orientation == VOISIN_V)
       return false;
 
-    bool temp = (land->x <= n->x && land->x + land->size_x >= n->x) || (land->x <= n->x + n->size  && land->x + land->size_x >= n->x + n->size );
+    bool temp = (land->x < n->x && land->x + land->size_x >= n->x) || (land->x < n->x + n->size  && land->x + land->size_x >= n->x + n->size );
     return temp && (land->y == n->y);
 }
 
 bool is_neigbour_bot(const land *land, const neighbour *n) {
     if(n->orientation == VOISIN_V)
       return false;
-    bool temp = (land->x <= n->x && land->x + land->size_x <= n->x) || (land->x <= n->x + n->size && land->x + land->size_x >= n->x + n->size);
+    bool temp = (land->x < n->x && land->x + land->size_x < n->x) || (land->x < n->x + n->size && land->x + land->size_x >= n->x + n->size);
     return temp && (n->y == land->y + land->size_y);
 }
 
@@ -768,7 +786,7 @@ bool is_neigbour_left(const land *land, const neighbour *n) {
     if(n->orientation == VOISIN_H)
       return false;
 
-    bool temp = (land->y <= n->y && land->y + land->size_y >= n->y) || (land->y <= n->y + n->size  && land->y + land->size_y >= n->y + n->size);
+    bool temp = (land->y < n->y && land->y + land->size_y >= n->y) || (land->y < n->y + n->size  && land->y + land->size_y >= n->y + n->size);
     return temp && (n->x == land->x);
 }
 
@@ -776,7 +794,7 @@ bool is_neigbour_right(const land *land, const neighbour *n) {
     if(n->orientation == VOISIN_H)
       return false;
 
-    bool temp = (land->y <= n->y && land->y + land->size_y >= n->y) || (land->y <= n->y + n->size  && land->y + land->size_y >= n->y + n->size );
+    bool temp = (land->y < n->y && land->y + land->size_y >= n->y) || (land->y < n->y + n->size  && land->y + land->size_y >= n->y + n->size );
     return temp && (n->x == land->x + land->size_x);
 }
 
@@ -790,6 +808,132 @@ void print_neighbour(const neighbour *n) {
   } else {
     printf("invalid neighbour \n");
   }
+}
+
+int update_neighbours(list *list,const land*land ,  const neighbour *new_n) {
+  neighbour temp;
+  for(int i = 0; i < list->nb_elem; i++) {
+    list_get_index(list, i, &temp);
+    printf("job ici \n");
+    print_neighbour(new_n);
+    print_neighbour(&temp);
+    if(are_over_neighbour(new_n, &temp)) {
+      update_border(&temp, new_n);
+      if(!is_neigbour(land , &temp)) {
+        printf("nous ne somme plus voisins :'( \n");
+      }
+      list_replace_index(list, i, &temp);
+    }
+  }
+}
+
+int update_border(neighbour *n1, const neighbour *n2) {
+  int ind_max1, ind_max2, ind_beg1, ind_beg2;
+  if(n1->orientation != n2->orientation)
+    return false;
+  if(n1->orientation ==  VOISIN_V) {
+    ind_max2 = n2->size + n2->y;
+    ind_max1 = n1->size + n1->y;
+    ind_beg1 = n1->y;
+    ind_beg2 = n2->y;
+  } else if(n1->orientation ==  VOISIN_H) {
+    ind_max2 = n2->size + n2->x;
+    ind_max1 = n1->size + n1->x;
+    ind_beg1 = n1->x;
+    ind_beg2 = n2->x;
+  }
+  if(is_over_neighbour(n1, n2)) {
+    if(is_contains_neighbour(n1, n2)) {
+      printf("seems imporssible \n");
+    } else if(is_over_neighbour_end(n1, n2)) {
+      n1->size = n1->size - (ind_max1 - ind_beg2);
+    } else if(is_over_neighbour_begin(n2, n1)) {
+      n1->size = n1->size - (ind_max2 - ind_beg1);
+      n1->x = ind_beg2;
+    }
+  } else {
+    printf("on tombe dans ce cas \n");
+  }
+  return 1;
+}
+
+int is_over_neighbour(const neighbour *n1,const neighbour *n2) {
+  if(n1->orientation != n2->orientation)
+    return false;
+  return (is_contains_neighbour(n1, n2) || is_over_neighbour_begin(n1, n2) || is_over_neighbour_end(n1, n2));
+}
+
+
+int are_over_neighbour(const neighbour *n1,const neighbour *n2) {
+  if(n1->orientation != n2->orientation)
+    return false;
+  return (is_over_neighbour(n1, n2) || is_over_neighbour(n2, n1));
+}
+
+// voisin 1 contien voisin 2
+// n1 x--------------x
+// n2    x-------x
+int is_contains_neighbour(const neighbour *n1,const neighbour *n2) {
+  int ind_max1, ind_max2, ind_beg1, ind_beg2;
+  bool temp;
+  if(n1->orientation != n2->orientation)
+    return false;
+  if(n1->orientation ==  VOISIN_V) {
+    ind_max2 = n2->size + n2->y;
+    ind_max1 = n1->size + n1->y;
+    ind_beg1 = n1->y;
+    ind_beg2 = n2->y;
+  } else if(n1->orientation ==  VOISIN_H) {
+    ind_max2 = n2->size + n2->x;
+    ind_max1 = n1->size + n1->x;
+    ind_beg1 = n1->x;
+    ind_beg2 = n2->x;
+  }
+  return (ind_beg1 < ind_beg2) && (ind_max1 > ind_max2);
+}
+
+// return true if
+// n1 : x--------------x
+// n2 :         x-------------x
+int is_over_neighbour_end(const neighbour *n1,const neighbour *n2) {
+  int ind_max1, ind_max2, ind_beg1, ind_beg2;
+  bool temp;
+  if(n1->orientation != n2->orientation)
+    return false;
+  if(n1->orientation ==  VOISIN_V) {
+    ind_max2 = n2->size + n2->y;
+    ind_max1 = n1->size + n1->y;
+    ind_beg1 = n1->y;
+    ind_beg2 = n2->y;
+  } else if(n1->orientation ==  VOISIN_H) {
+    ind_max2 = n2->size + n2->x;
+    ind_max1 = n1->size + n1->x;
+    ind_beg1 = n1->x;
+    ind_beg2 = n2->x;
+  }
+  return (ind_beg1 < ind_beg2) && (ind_max2 > ind_max1);
+}
+
+// return true if
+// n1 :         x--------------x
+// n2 : x--------------x
+int is_over_neighbour_begin(const neighbour *n1,const neighbour *n2) {
+  int ind_max1, ind_max2, ind_beg1, ind_beg2;
+  bool temp;
+  if(n1->orientation != n2->orientation)
+    return false;
+  if(n1->orientation ==  VOISIN_V) {
+    ind_max2 = n2->size + n2->y;
+    ind_max1 = n1->size + n1->y;
+    ind_beg1 = n1->y;
+    ind_beg2 = n2->y;
+  } else if(n1->orientation ==  VOISIN_H) {
+    ind_max2 = n2->size + n2->x;
+    ind_max1 = n1->size + n1->x;
+    ind_beg1 = n1->x;
+    ind_beg2 = n2->x;
+  }
+  return (ind_beg1 > ind_beg2) && (ind_max2 < ind_max1);
 }
 
 void free_neighbour_cb(void *n) {
@@ -839,8 +983,6 @@ int list_get_index(const list *l,int i, void *data) {
 }
 
 int list_replace_index(list * l, int i ,const void *data) {
-  printf("avant remplacement \n");
-  print_neighbour((neighbour*)data);
   if (i >= l->nb_elem || i < 0 ) return 0;
   cell *current = l->first;
   int acc = 0;
