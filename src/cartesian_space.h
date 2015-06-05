@@ -62,6 +62,7 @@ int is_neighbour(const land *land, const neighbour *n);
 
 /**
  * Retourne vrai une frontière en haut avec land possède un voisin neighbour sur sa frontière gauche.
+ * PARTIALLY TESTED
  */
 bool is_neighbour_top(const land *land, const neighbour *n);
 
@@ -137,9 +138,13 @@ int is_over_neighbour(const neighbour *n1, const neighbour *n2);
 //
 int are_over_neighbour(const neighbour *n1, const neighbour *n2);
 
-// voisin 1 contien voisin 2
-// n1 x--------------x
-// n2    x-------x
+/**
+ * retourne vrai si la frontière n2 est strictement inclue dans n1
+ * n1 x--------------x
+ * n2    x-------x
+ *
+ * TESTED
+ */
 int is_contains_neighbour(const neighbour *n1, const neighbour *n2);
 
 // return true if

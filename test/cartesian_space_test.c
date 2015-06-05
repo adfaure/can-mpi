@@ -149,6 +149,27 @@ void test_IS_NEIGHBOUR_TOP(void) {
   CU_ASSERT(!is_neighbour_bot(&l, &n));
 }
 
+void test_IS_CONTAINS_NEIGHBOUR(void) {
+
+  //   500            1000
+  // n1 x--------------x
+  // n2    x-------x
+  neighbour n1;
+  neighbour n2;
+  init_neighbour(&n1, 500, 0, 500, VOISIN_H, 0);
+  init_neighbour(&n2, 501, 0, 498, VOISIN_H, 0);
+  CU_ASSERT(is_contains_neighbour(&n1, &n2));
+
+  // idem mais vertical
+  init_neighbour(&n1, 0, 500, 500, VOISIN_V, 0);
+  init_neighbour(&n2, 0, 501, 498, VOISIN_V, 0);
+  CU_ASSERT(is_contains_neighbour(&n1, &n2));
+
+  init_neighbour(&n1, 0, 500, 500, VOISIN_V, 0);
+  init_neighbour(&n2, 0, 500, 498, VOISIN_V, 0);
+  CU_ASSERT(!is_contains_neighbour(&n1, &n2));
+}
+
 
 /* The main() function for setting up and running the tests.
  * Returns a CUE_SUCCESS on successful running, another
@@ -177,7 +198,8 @@ int main()
      (NULL == CU_add_test(pSuite, "test of is_land_contains()", test_IS_LAND_CONTAINS)) ||
      (NULL == CU_add_test(pSuite, "test of is_land_contains_pair()", test_IS_LAND_CONTAINS_PAIR)) ||
      (NULL == CU_add_test(pSuite, "test of split_land()", test_SPLIT_LAND)) ||
-     (NULL == CU_add_test(pSuite, "test of is_neighbour_top()", test_IS_NEIGHBOUR_TOP))
+     (NULL == CU_add_test(pSuite, "test of is_neighbour_top()", test_IS_NEIGHBOUR_TOP)) ||
+     (NULL == CU_add_test(pSuite, "test of is_contains_neighbour()", test_IS_CONTAINS_NEIGHBOUR))
 
      ) {
       CU_cleanup_registry();
