@@ -27,9 +27,8 @@ int CAN_Receive_neighbour(neighbour *neig, int mpi_tag, int mpi_src,  MPI_Comm c
   return 1;
 }
 
-
 void split_land_update_neighbour(land *new_land,  land *old_land,  list *new_n, list *old_n,  int new_rank,  int old_rank) {
-  neighbour temp,  old,  new;
+  neighbour temp, old, new;
   split_land(new_land,  old_land);
   land_extract_neighbourg_after_split(new_land,  old_land,  &old,  &new);
   old.com_rank = new_rank;
@@ -366,7 +365,7 @@ int is_over_neighbour_begin(const neighbour *n1, const neighbour *n2) {
 }
 
 void free_neighbour_cb(void *n) {
-  // neighbour elem = *((neighbour *) n); TODO ?????
+  neighbour elem = *((neighbour *) n);
 }
 
 void print_neighbour_cb(void *n) {

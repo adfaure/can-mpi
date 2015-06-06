@@ -243,6 +243,68 @@ void test_IS_OVER_NEIGHBOUR_END(void) {
   CU_ASSERT(!is_over_neighbour_begin(&n1, &n2));
 }
 
+void test_LAND_EXTRACT_NEIGHBOURG_AFTER_SPLIT(void) {
+  land old;
+  land new;
+  neighbour n1;
+  neighbour n2;
+
+  init_land(&old, 0, 0, 500, 1000); // a vertical rectangle
+  split_land(&new, &old); // new: ((0, 500), (500, 500))
+  land_extract_neighbourg_after_split(&new, &old, &n1, &n2);
+  CU_ASSERT(n1.orientation == VOISIN_H);
+  CU_ASSERT(n2.orientation == VOISIN_H);
+  CU_ASSERT(n1.x == 0);
+  CU_ASSERT(n1.y == 500);
+  CU_ASSERT(n2.x == 0);
+  CU_ASSERT(n2.y == 500);
+
+  init_land(&old, 0, 0, 1000, 500); // a vertical rectangle
+  split_land(&new, &old); // new: ((0, 500), (500, 500))
+  land_extract_neighbourg_after_split(&new, &old, &n1, &n2);
+  CU_ASSERT(n1.orientation == VOISIN_V);
+  CU_ASSERT(n2.orientation == VOISIN_V);
+  CU_ASSERT(n1.x == 500);
+  CU_ASSERT(n1.y == 0);
+  CU_ASSERT(n2.x == 500);
+  CU_ASSERT(n2.y == 0);
+}
+
+void test_ADJUST_NEIGHBOUR(void) {
+  land old;
+  land new;
+  land new2;
+  neighbour n1;
+  neighbour n2;
+
+  init_land(&old, 0, 0, 500, 1000); // a vertical rectangle
+  split_land(&new, &old); // new: ((0, 500), (500, 500))
+  land_extract_neighbourg_after_split(&new, &old, &n1, &n2);
+  // n1 et n1 contiennent la frontière entre new et old
+  split_land(&new2, &new); // new2: ((250,  250),  (500,  500))
+  print_land(&new2);
+  //print_neighbour(&n1);
+  CU_ASSERT(n1.x == 0);
+  CU_ASSERT(n1.y == 500);
+  CU_ASSERT(n2.x == 0);
+  CU_ASSERT(n2.y == 500);
+
+  adjust_neighbour(&new2, &n1);
+  adjust_neighbour(&new2, &n2);
+  CU_ASSERT(n1.x == 250);
+  CU_ASSERT(n1.y == 500);
+  CU_ASSERT(n2.x == 250);
+  CU_ASSERT(n2.y == 500);
+
+  land_extract_neighbourg_after_split(&new, &old, &n1, &n2); // TODO works but avoid to have so much side effects
+  adjust_neighbour(&new, &n1);
+  adjust_neighbour(&new, &n2);
+  CU_ASSERT(n1.x == 0);
+  CU_ASSERT(n1.y == 500);
+  CU_ASSERT(n2.x == 0);
+  CU_ASSERT(n2.y == 500);
+}
+
 /* The main() function for setting up and running the tests.
  * Returns a CUE_SUCCESS on successful running, another
  * CUnit error code on failure.
@@ -275,7 +337,9 @@ int main()
      (NULL == CU_add_test(pSuite, "test of is_neighbour_left()", test_IS_NEIGHBOUR_LEFT)) ||
      (NULL == CU_add_test(pSuite, "test of is_neighbour_right()", test_IS_NEIGHBOUR_RIGHT)) ||
      (NULL == CU_add_test(pSuite, "test of is_contains_neighbour()", test_IS_CONTAINS_NEIGHBOUR)) ||
-     (NULL == CU_add_test(pSuite, "test of is_contains_neighbour_end()", test_IS_OVER_NEIGHBOUR_END))
+     (NULL == CU_add_test(pSuite, "test of is_contains_neighbour_end()", test_IS_OVER_NEIGHBOUR_END)) ||
+     (NULL == CU_add_test(pSuite, "test of land_extract_neighbourg_after_split()", test_LAND_EXTRACT_NEIGHBOURG_AFTER_SPLIT)) ||
+     (NULL == CU_add_test(pSuite, "test of adjust_neighbour()", test_ADJUST_NEIGHBOUR))
 
      ) {
       CU_cleanup_registry();

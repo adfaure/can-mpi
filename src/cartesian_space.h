@@ -101,11 +101,14 @@ void free_neighbour_cb(void *);
  * A utiliser apèrs @split_land
  * Permet d'extraire les deux frontières (@n1, @n2)
  *  résultantes d'un split qui a généré land1 et land2
+ *
+ * TESTED
  */
 void land_extract_neighbourg_after_split(land *land1, land *land2, neighbour *n1, neighbour *n2);
 
 /**
  * Renormalise/Ajuste une frontière (@neigbour) pour correspondre aux vrais frontières du @land
+ * TESTED
  */
 int adjust_neighbour(land *land, neighbour *n);
 
@@ -185,13 +188,13 @@ void split_land(land *new_land, land *old_land);
 void split_land_update_neighbour(land *new_land, land *old_land, list *new_n, list *old_n, int, int);
 
 /**
- *  allocateur d'un land
+ * initialiseur d'un land
  * TESTED
  */
 void init_land(land *l, unsigned  int x, unsigned  int y, unsigned int s_x, unsigned int s_y);
 
 /**
- *  Désalocation d'un land
+ *  destructeur d'un land
  */
 void free_land(land *l);
 
