@@ -223,7 +223,7 @@ void test_IS_CONTAINS_NEIGHBOUR(void) {
 
   init_neighbour(&n1, 0, 500, 500, VOISIN_V, 0);
   init_neighbour(&n2, 0, 500, 498, VOISIN_V, 0);
-  CU_ASSERT(!is_contains_neighbour(&n1, &n2));
+  CU_ASSERT(is_contains_neighbour(&n1, &n2));
 }
 
 void test_IS_OVER_NEIGHBOUR_END(void) {
@@ -305,6 +305,51 @@ void test_ADJUST_NEIGHBOUR(void) {
   CU_ASSERT(n2.y == 500);
 }
 
+void test_UPDATE_BORDER(void) {
+  neighbour n1, n2;
+  init_neighbour(&n1, 0, 0, 500,VOISIN_H  ,0);
+  init_neighbour(&n2, 0, 0, 500,VOISIN_V  ,0);
+  CU_ASSERT(!update_border(&n1, &n2));
+
+  init_neighbour(&n2, 250, 0, 500,VOISIN_H  ,0);
+  CU_ASSERT(update_border(&n1, &n2));
+  CU_ASSERT(n1.size == 250);
+  CU_ASSERT(n1.x    == 0);
+  CU_ASSERT(n1.y    == 0);
+
+  init_neighbour(&n1, 250, 500, 500,VOISIN_H  ,0);
+  init_neighbour(&n2, 0  , 500, 500,VOISIN_H  ,0);
+  CU_ASSERT(update_border(&n1, &n2));
+  CU_ASSERT(n1.size == 250);
+  CU_ASSERT(n1.x == n2.x + n2.size);
+
+  init_neighbour(&n1, 0, 500, 500,VOISIN_H  ,0);
+  init_neighbour(&n2, 0, 500, 500,VOISIN_H  ,0);
+  CU_ASSERT(update_border(&n1, &n2));
+  CU_ASSERT(n1.size == 0);
+
+  init_neighbour(&n1, 0, 500, 500,VOISIN_V  ,0);
+  init_neighbour(&n2, 0, 500, 500,VOISIN_V  ,0);
+  CU_ASSERT(update_border(&n1, &n2));
+  CU_ASSERT(n1.size == 0);
+
+  init_neighbour(&n1, 250  , 0  , 500 ,VOISIN_V  ,0);
+  init_neighbour(&n2, 250  , 250, 500 ,VOISIN_V  ,0);
+  CU_ASSERT(update_border(&n1, &n2));
+  CU_ASSERT(n1.size == 250);
+
+  init_neighbour(&n1, 250  , 0  , 500  ,VOISIN_V  ,0);
+  init_neighbour(&n2, 250  , 250, 500,VOISIN_V  ,0);
+  CU_ASSERT(update_border(&n1, &n2));
+  CU_ASSERT(n1.size == 250);
+  CU_ASSERT(n1.y    ==  0);
+  init_neighbour(&n1, 500, 0  , 1000  , VOISIN_V  ,0);
+  init_neighbour(&n2, 500, 500 ,  500 , VOISIN_V  ,0);
+  CU_ASSERT(update_border(&n1, &n2));
+  CU_ASSERT(n1.size == 500);
+  CU_ASSERT(n1.y    ==  0);
+}
+
 /* The main() function for setting up and running the tests.
  * Returns a CUE_SUCCESS on successful running, another
  * CUnit error code on failure.
@@ -339,7 +384,7 @@ int main()
      (NULL == CU_add_test(pSuite, "test of is_contains_neighbour()", test_IS_CONTAINS_NEIGHBOUR)) ||
      (NULL == CU_add_test(pSuite, "test of is_contains_neighbour_end()", test_IS_OVER_NEIGHBOUR_END)) ||
      (NULL == CU_add_test(pSuite, "test of land_extract_neighbourg_after_split()", test_LAND_EXTRACT_NEIGHBOURG_AFTER_SPLIT)) ||
-     (NULL == CU_add_test(pSuite, "test of adjust_neighbour()", test_ADJUST_NEIGHBOUR))
+	 (NULL == CU_add_test(pSuite, "test of update_border()", test_UPDATE_BORDER))
 
      ) {
       CU_cleanup_registry();

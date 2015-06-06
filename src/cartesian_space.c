@@ -259,34 +259,51 @@ int update_neighbours(list *list, const land*land,   const neighbour *new_n) {
   return 0;
 }
 
+int are_equals_neighbours(const neighbour*n1, const neighbour *n2) {
+    int res = 0;
+    if(n1->orientation == VOISIN_H && n1->orientation == n2->orientation) {
+        res = (n1->x == n2->x && n1->size == n2->size);
+	} else if(n1->orientation == VOISIN_V && n1->orientation == n2->orientation) {
+        res = (n1->y == n2->y && n1->size == n2->size);
+	}
+    return res;
+}
+
 int update_border(neighbour *n1,  const neighbour *n2) {
-  int ind_max1,  ind_max2,  ind_beg1,  ind_beg2;
-  if(n1->orientation != n2->orientation)
-    return false;
-  if(n1->orientation ==  VOISIN_V) {
-    ind_max2 = n2->size + n2->y;
-    ind_max1 = n1->size + n1->y;
-    ind_beg1 = n1->y;
-    ind_beg2 = n2->y;
-  } else if(n1->orientation ==  VOISIN_H) {
-    ind_max2 = n2->size + n2->x;
-    ind_max1 = n1->size + n1->x;
-    ind_beg1 = n1->x;
-    ind_beg2 = n2->x;
-  }
-  if(is_over_neighbour(n1,  n2)) {
-    if(is_contains_neighbour(n1,  n2)) {
-      printf("seems imporssible \n");
-    } else if(is_over_neighbour_end(n1,  n2)) {
-      n1->size = n1->size - (ind_max1 - ind_beg2);
-    } else if(is_over_neighbour_begin(n2,  n1)) {
-      n1->size = n1->size - (ind_max2 - ind_beg1);
-      n1->x = ind_beg2;
+    int ind_max1,  ind_max2,  ind_beg1,  ind_beg2, ret = 0;
+    if(n1->orientation != n2->orientation) {
+        return false;
     }
-  } else {
-    printf("on tombe dans ce cas \n");
-  }
-  return 1;
+
+    if(n1->orientation ==  VOISIN_V) {
+        ind_max2 = n2->size + n2->y;
+        ind_max1 = n1->size + n1->y;
+        ind_beg1 = n1->y;
+        ind_beg2 = n2->y;
+    } else if(n1->orientation ==  VOISIN_H) {
+        ind_max2 = n2->size + n2->x;
+        ind_max1 = n1->size + n1->x;
+        ind_beg1 = n1->x;
+        ind_beg2 = n2->x;
+    }
+    if(are_equals_neighbours(n1, n2)) {
+        n1->size = 0;
+        return 1;
+    }
+    if(is_over_neighbour_end(n1,  n2) || is_over_neighbour_begin(n2,  n1)) {
+        n1->size = n1->size - (ind_max1 - ind_beg2);
+        ret = 1;
+    }
+    if(is_over_neighbour_begin(n1,  n2) || is_over_neighbour_end(n2,  n1)) {
+        n1->size = n1->size - (ind_max2 - ind_beg1);
+        if(n1->orientation == VOISIN_H) {
+            n1->x = n2->x + n2->size;
+        } else if(n1->orientation == VOISIN_H) {
+            n1->y = n2->y + n2->size;
+        }
+        ret = 1;
+    }
+    return ret;
 }
 
 int is_over_neighbour(const neighbour *n1,  const neighbour *n2) {
@@ -319,7 +336,7 @@ int is_contains_neighbour(const neighbour *n1, const neighbour *n2) {
     ind_beg1 = n1->x;
     ind_beg2 = n2->x;
   }
-  return (ind_beg1 < ind_beg2) && (ind_max1 > ind_max2);
+  return (ind_beg1 <= ind_beg2) && (ind_max1 >= ind_max2);
 }
 
 // return true if
@@ -340,7 +357,7 @@ int is_over_neighbour_end(const neighbour *n1, const neighbour *n2) {
     ind_beg1 = n1->x;
     ind_beg2 = n2->x;
   }
-  return (ind_beg1 <= ind_beg2) && (ind_max2 > ind_max1);
+  return (ind_beg1 <= ind_beg2) && (ind_max2 >= ind_max1);
 }
 
 // return true if
@@ -361,7 +378,7 @@ int is_over_neighbour_begin(const neighbour *n1, const neighbour *n2) {
     ind_beg1 = n1->x;
     ind_beg2 = n2->x;
   }
-  return (ind_beg1 >= ind_beg2) && (ind_max2 < ind_max1);
+  return (ind_beg1 >= ind_beg2) && (ind_max2 <= ind_max1);
 }
 
 void free_neighbour_cb(void *n) {
