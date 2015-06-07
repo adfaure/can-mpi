@@ -243,14 +243,13 @@ int update_neighbours(list *list, const land*land,   const neighbour *new_n) {
     list_get_index(list,  i,  &temp);
     if(update_border(&temp,  new_n)) {
       if(!is_neighbour(land,  &temp)) {
-    	  print_neighbour(&temp);
-      	printf("------------------------------------ update ------------------------------------ \n");
+    	  printf("----------------------------- voisin list ----------------------------- \n");
     	  list_apply(list, print_neighbour_cb);
     	  list_remove_index(list, i, free_neighbour_cb);
-        printf("------------------------------------ rmoved ------------------------------------ \n");
+    	  printf("----------------------------- voisin list ----------------------------- \n");
     	  list_apply(list, print_neighbour_cb);
       } else {
-    	list_replace_index(list,  i,  &temp);
+    	  list_replace_index(list,  i,  &temp);
       }
     }
   }
