@@ -398,7 +398,6 @@ void do_nothing (void * n) {}
 void test_SPLIT_LAND_UPDATE_NEIGHBOUR(void) {
   land l1, l_out;
   init_land(&l1, 500, 250, 250, 500); // ((500,  250),  (250,  500))
-  print_land(&l1);
 
   list nghbrs1, nghbrs_out;
   init_list(&nghbrs1, sizeof(neighbour));
@@ -493,10 +492,23 @@ void test_SPLIT_LAND_UPDATE_NEIGHBOUR(void) {
   list_add_front(&nghbrs1, &n_le2);
   split_land_update_neighbour(&l_out, &l1, &nghbrs_out, &nghbrs1, 42, 43);
 
+  neighbour temp;
+  for(int i = 0 ; i < nghbrs_out.nb_elem ; i++ ) {
+	  list_get_index(&nghbrs_out, i ,&temp);
+	  CU_ASSERT(is_neighbour(&l_out, &temp));
+  }
+
+  for(int i = 0 ; i < nghbrs1.nb_elem ; i++ ) {
+	  list_get_index(&nghbrs1, i ,&temp);
+	  CU_ASSERT(is_neighbour(&l1, &temp));
+  }
+
+  /*
   printf("\n");
   list_apply(&nghbrs1 , print_one_neighbour);
   printf("\n");
   list_apply(&nghbrs_out , print_one_neighbour);
+  */
   // TODO FINIR LE TEST
 }
 
