@@ -20,7 +20,7 @@ int CAN_Send_neighbour_list(const list *l, int mpi_tag, int mpi_destinataire,  M
 
 //MPI_Recv(&main_loop_buffer_int[0], count,  MPI_INT,  main_loop_from,  main_loop_tag,  MPI_COMM_WORLD,  &main_loop_status);
 int CAN_Receive_neighbour(neighbour *neig, int mpi_tag, int mpi_src,  MPI_Comm comm ) {
-  unsigned int buffer[5],  size =  (sizeof(neighbour) / sizeof(unsigned int)) ;
+  unsigned int buffer[5],  size =  (sizeof(neighbour) / sizeof(unsigned int));
   printf("reception de %d ui \n", (int) size);
   MPI_Recv(&buffer[0],  size,  MPI_UNSIGNED, mpi_src,  mpi_tag,  comm,  MPI_STATUS_IGNORE);
   init_neighbour(neig,  buffer[0],  buffer[1],  buffer[2], buffer[3],  buffer[4]);

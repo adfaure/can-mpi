@@ -40,6 +40,31 @@ void test_LIST_ADD_FRONT(void) {
   CU_ASSERT(n.orientation == n2.orientation);
 }
 
+void test_LIST_REPLACE_INDEX(void) {
+  list nghbrs;
+  init_list(&nghbrs, sizeof(neighbour));
+
+  neighbour n;
+  init_neighbour(&n, 42, 42, 42*42, VOISIN_H, 42);
+  list_add_front(&nghbrs, &n);
+  CU_ASSERT(nghbrs.nb_elem == 1);
+  CU_ASSERT(nghbrs.element_size == sizeof(neighbour));
+
+  neighbour n2;
+  init_neighbour(&n, 100, 100, 42*42, VOISIN_H, 52);
+  list_add_front(&nghbrs, &n2);
+
+  neighbour n3;
+  list_get_index(&nghbrs, 1, &n3);
+  CU_ASSERT(n3.x == n2.x);
+
+  list_replace_index(&nghbrs, 1, &n);
+  list_get_index(&nghbrs, 1, &n3);
+  CU_ASSERT(n3.x == n.x);
+}
+
+
+
 /* The main() function for setting up and running the tests.
  * Returns a CUE_SUCCESS on successful running, another
  * CUnit error code on failure.
@@ -64,7 +89,8 @@ int main()
 
      (NULL == CU_add_test(pSuite, "test of 42 !!", test_42)) ||
      (NULL == CU_add_test(pSuite, "test of init_list()", test_INIT_LIST)) ||
-     (NULL == CU_add_test(pSuite, "test of list_add_front()", test_LIST_ADD_FRONT))
+     (NULL == CU_add_test(pSuite, "test of list_add_front()", test_LIST_ADD_FRONT)) ||
+     (NULL == CU_add_test(pSuite, "test of list_replace_index()", test_LIST_REPLACE_INDEX))
 
      ) {
       CU_cleanup_registry();

@@ -84,7 +84,7 @@ int list_get_index(const list *l, int i, void *data) {
   return 1;
 }
 
-int list_replace_index(list * l, int i ,const void *data) {
+int list_replace_index(list * l, int i, const void *data) {
   if (i >= l->nb_elem || i < 0) return 0;
   cell *current = l->first;
   int acc = 0;
