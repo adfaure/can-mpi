@@ -61,7 +61,7 @@ void init_list(list *l, unsigned int element_size) {
     l->element_size = element_size;
 }
 
-void list_add_front(list * l, void *elem) {
+void list_add_front(list * l, const void *elem) {
     cell *temp,*new_cell = (cell*) malloc(sizeof(cell));
     new_cell->data = malloc(l->element_size);
     new_cell->next = NULL;

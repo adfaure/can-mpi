@@ -93,7 +93,7 @@ void init_list(list *l, unsigned int element_size);
  * @post l est de taille +1
  * TESTED
  */
-void list_add_front(list *l, void *data);
+void list_add_front(list *l,const void *data);
 
 /**
  * Récupère dans @data le i-ème élément de la liste
