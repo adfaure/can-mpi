@@ -82,6 +82,7 @@ int main(int argc, char**argv) {
         }
     }
     create_svg_logs("world.svg",SIZE_X, SIZE_Y ,&lands);
+
   } else {
     get_random_id(&pair_id, SIZE_X, SIZE_Y); // TODO CHECKME
     while(1) {

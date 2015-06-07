@@ -248,7 +248,7 @@ void print_neighbour(const neighbour *n) {
   }
 }
 
-int update_neighbours(list *list, const land*land,   const neighbour *new_n) {
+int update_neighbours(list *list, const land*land, const neighbour *new_n) {
   neighbour temp;
   for(int i = 0; i < list->nb_elem; i++) {
     list_get_index(list,  i,  &temp);
@@ -462,13 +462,21 @@ void create_svg_logs(const char* path,const int size_x, const int size_y ,const 
 	}
 
 	land temp_land;
+	int text_size_x, text_size_y;
 	unsigned long color =  pow(16, 6) / list_lands->nb_elem;
 	fprintf(f, "<?xml version=\"1.0\" encoding=\"utf-8\"?> \n");
 	fprintf(f, "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\"%d\" height=\"%d\"> \n", size_x, size_x);
 
 	for(int i = 0 ; i < list_lands->nb_elem; i++) {
 		list_get_index(list_lands, i, &temp_land);
-		fprintf(f, " <rect width=\"%u\" height=\"%u\" x=\"%u\" y=\"%u\" fill=\"#%X\" /> \n", temp_land.size_x, temp_land.size_y, temp_land.x, temp_land.y, (i+1) * color );
+		fprintf(f, " <rect width=\"%u\" height=\"%u\" x=\"%u\" y=\"%u\" fill=\"#%X\" /> \n", temp_land.size_x, temp_land.size_y, temp_land.x, temp_land.y, (i + 1) * color );
+	}
+
+	for(int i = 0 ; i < list_lands->nb_elem; i++) {
+		list_get_index(list_lands, i, &temp_land);
+		text_size_x =  temp_land.x + (temp_land.size_x/2) ;
+		text_size_y =  temp_land.y + (temp_land.size_y/2);
+		fprintf(f, "<text x=\"%d\" y=\"%d\">%d</text>\n", text_size_x, text_size_y ,(list_lands->nb_elem  - i) );
 	}
 
 	fprintf(f, "</svg> \n");
