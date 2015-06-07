@@ -9,6 +9,13 @@
 #include <string.h>
 #include <math.h>
 
+// world size
+#define SIZE_X 1000
+#define SIZE_Y 1000
+
+//root process
+#define ROOT_PROCESS 0
+
 // max sizes
 #define MAX_SIZE_BUFFER 100
 #define MAX_SIZE_NEIGHBOUR 100

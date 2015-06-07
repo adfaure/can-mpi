@@ -331,7 +331,9 @@ void print_land(const land *l);
  */
 void log_factory(FILE *f, const void *data, int CODE, int from);
 
-
+/**
+ *
+ */
 void create_svg_logs(const char* path,const int size_x, const int size_y ,const list *list_lands);
 
 #endif
