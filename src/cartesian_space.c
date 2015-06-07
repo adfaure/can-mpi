@@ -164,8 +164,8 @@ void init_neighbour(neighbour *n,  unsigned int x,  unsigned int y,  unsigned in
 }
 
 int is_neighbour(const land *land,  const neighbour *n) {
-  if(n->size <= 0) {
-	return VOISIN_NONE;
+  if(!is_neighbour_valid(n)) {
+	  return VOISIN_NONE;
   } else if(is_neighbour_top(land,  n)) {
     return VOISIN_TOP;
   } else if (is_neighbour_bot(land,  n)) {
@@ -180,11 +180,7 @@ int is_neighbour(const land *land,  const neighbour *n) {
 }
 
 int is_neighbour_valid(const neighbour *n) {
-  if (n->size > 0) {
-    return 1; // valid
-  } else {
-    return 0; // not valid
-  }
+  return n->size > 0;
 }
 
 void neighbour_to_buffer(const list *l,  unsigned int buffer[MAX_SIZE_BUFFER]) {

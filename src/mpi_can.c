@@ -148,7 +148,7 @@ int main(int argc, char**argv) {
           CAN_Send_neighbour(&temp_voisin,UPDATE_NEIGBOUR, temp_voisin.com_rank, MPI_COMM_WORLD );
           print_neighbour(&temp_voisin);
         }
-        printf("voisins recu \n");
+        printf("[ %d ] voisins recu \n", com_rank);
         list_apply(&voisins, print_neighbour_cb);
         printf("\n");
       }
@@ -183,8 +183,6 @@ int main(int argc, char**argv) {
         land_buffer[0] = new_land.x; land_buffer[1] = new_land.y;land_buffer[2] = new_land.size_x;land_buffer[3] = new_land.size_y;
         MPI_Send(&land_buffer[0], 4, MPI_UNSIGNED, main_loop_from, REQUEST_RECEIVE_LAND, MPI_COMM_WORLD );
         CAN_Send_neighbour_list(&temp_voisins,RES_INIT_NEIGHBOUR , main_loop_from, MPI_COMM_WORLD);
-        printf("envoie des voisins \n");
-        list_apply(&temp_voisins, print_neighbour_cb);
         list_clear(&temp_voisins, free_neighbour_cb);
         printf("je suis %d , transaction fini avec %d \n",com_rank, wait_for);
         wait_for = -1;
