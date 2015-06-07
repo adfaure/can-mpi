@@ -146,4 +146,9 @@ int list_replace_index(list *l, int i, const void *data);
  */
 int list_remove_index(list * l, int i , void(*free_function)(void *data));
 
+/**
+ *
+ */
+int list_remove_front(list *l, void(*free_function)(void *data));
+
 #endif
