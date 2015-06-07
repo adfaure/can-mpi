@@ -22,7 +22,7 @@ int main(int argc, char**argv) {
   unsigned int main_loop_from;
   int main_loop_tag, count, main_loop_buffer_int[MAX_SIZE_BUFFER], send_int_buffer[MAX_SIZE_BUFFER]; // wait_array on attend un message d'une source avec un tag
   bool bootstrap = false;
-  list voisins, temp_voisins;
+  list voisins, temp_voisins, lands;
   neighbour neighbour_temp_find, temp_voisin;
   pair pair_id, pair_join_request;
   land land_id, new_land, temp_land;
@@ -31,9 +31,12 @@ int main(int argc, char**argv) {
   MPI_Init (&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &nb_proc);
   MPI_Comm_rank(MPI_COMM_WORLD, &com_rank);
+
   init_list(&voisins, sizeof(neighbour));
   init_list(&temp_voisins, sizeof(neighbour));
-  srand(com_rank * nb_proc);
+  init_list(&lands, sizeof(land));
+
+  srand(time(NULL) * com_rank * nb_proc);
 
   if(com_rank == ROOT_PROCESS) {
     for(i = 0; i < nb_proc; i++) {
@@ -63,6 +66,7 @@ int main(int argc, char**argv) {
           MPI_Recv(&(land_buffer[0]), 4, MPI_UNSIGNED, i, ACK, MPI_COMM_WORLD, &main_loop_status);
           init_land(&temp_land, land_buffer[0], land_buffer[1] , land_buffer[2], land_buffer[3]);
           log_factory(file, &temp_land, LAND_LOG, i);
+          list_add_front(&lands , &temp_land);
           MPI_Send(&buffer_simple_int ,1 , MPI_INT, i, SEND_NEIGBOUR_ORDER, MPI_COMM_WORLD);
           MPI_Probe(i, ACK, MPI_COMM_WORLD, &main_loop_status);
           MPI_Get_count (&main_loop_status, MPI_UNSIGNED, &count);
@@ -77,7 +81,7 @@ int main(int argc, char**argv) {
           }
         }
     }
-
+    create_svg_logs("world.svg",SIZE_X, SIZE_Y ,&lands);
   } else {
     get_random_id(&pair_id, SIZE_X, SIZE_Y); // TODO CHECKME
     while(1) {

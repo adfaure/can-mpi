@@ -1,4 +1,5 @@
 #include "cartesian_space.h"
+#include "svg_format.h"
 
 int CAN_Send_neighbour(const neighbour *neig, int mpi_tag, int mpi_destinataire,  MPI_Comm comm) {
   unsigned int buffer[5],  size = (int) (sizeof(neighbour) / sizeof(unsigned int));
@@ -447,3 +448,24 @@ void log_factory(FILE *f,  const void *data,  int CODE,  int from) {
   }
   fflush(f);
 }
+
+void create_svg_logs(const char* path,const int size_x, const int size_y ,const list *list_lands) {
+	FILE *f = fopen(path, "w+");
+	if(!f) {
+		fprintf(stderr, "erreur lors de l'ouverture du fichier : %s", path);
+	}
+
+	land temp_land;
+	unsigned long color =  pow(16, 6) / list_lands->nb_elem;
+	fprintf(f, "<?xml version=\"1.0\" encoding=\"utf-8\"?> \n");
+	fprintf(f, "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\"%d\" height=\"%d\"> \n", size_x, size_x);
+
+	for(int i = 0 ; i < list_lands->nb_elem; i++) {
+		list_get_index(list_lands, i, &temp_land);
+		fprintf(f, " <rect width=\"%u\" height=\"%u\" x=\"%u\" y=\"%u\" fill=\"#%X\" /> \n", temp_land.size_x, temp_land.size_y, temp_land.x, temp_land.y, (i+1) * color );
+	}
+
+	fprintf(f, "</svg> \n");
+	fclose(f);
+}
+

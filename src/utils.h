@@ -33,8 +33,9 @@
 #define UPDATE_NEIGBOUR      789
 
 //LOG define
-#define LAND_LOG 0
+#define LAND_LOG      0
 #define NEIGHBOUR_LOG 1
+#define SVG_FORMAT    2
 
 // voisin variables
 #define VOISIN_V           1 //vertical
