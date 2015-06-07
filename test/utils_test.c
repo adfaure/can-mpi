@@ -65,6 +65,46 @@ void test_LIST_REPLACE_INDEX(void) {
 
 void do_nothing (void * n) {}
 
+void test_LIST_REMOVE_FRONT(void) {
+  list nghbrs;
+  neighbour n, n2, n3, out;
+  init_neighbour(&n, 11, 11, 42*42, VOISIN_H, 42);
+  init_neighbour(&n2, 22, 22, 42*42, VOISIN_H, 42);
+  init_neighbour(&n3, 33, 33, 42*42, VOISIN_H, 42);
+
+  init_list(&nghbrs, sizeof(neighbour));
+
+  list_add_front(&nghbrs, &n);
+  list_add_front(&nghbrs, &n2);
+  list_add_front(&nghbrs, &n3);
+
+
+  CU_ASSERT(nghbrs.nb_elem == 3);
+  CU_ASSERT(list_get_index(&nghbrs, 0, &out));
+  CU_ASSERT(out.x == 33);
+
+
+  list_remove_front(&nghbrs, do_nothing);
+  // [22, 33]
+  CU_ASSERT(nghbrs.nb_elem == 2);
+  CU_ASSERT(list_get_index(&nghbrs, 0, &out));
+  CU_ASSERT(out.x == 22);
+
+  list_remove_front(&nghbrs, do_nothing);
+  // [33]
+  CU_ASSERT(nghbrs.nb_elem == 1);
+  CU_ASSERT(list_get_index(&nghbrs, 0, &out));
+  CU_ASSERT(out.x == 11);
+
+  list_remove_front(&nghbrs, do_nothing);
+  // []
+  CU_ASSERT(nghbrs.nb_elem == 0);
+  CU_ASSERT(!list_get_index(&nghbrs, 0, &out));
+
+  CU_ASSERT(!list_remove_front(&nghbrs, do_nothing));
+}
+
+
 void test_LIST_REMOVE_INDEX_simple(void) {
   list nghbrs;
   neighbour n, n2, n3, out;
@@ -85,41 +125,37 @@ void test_LIST_REMOVE_INDEX_simple(void) {
 
   CU_ASSERT(nghbrs.nb_elem == 3);
 
-  // avant supression du dernier
-  list_get_index(&nghbrs, 2, &out);
-  CU_ASSERT(out.x == n.x);
-
   // clear out
   init_neighbour(&out, 0, 0, 0, VOISIN_H, 0);
 
   // après suppression du dernier
-  list_remove_index(&nghbrs, 2, do_nothing);
-  // [33, 22]
-
-  CU_ASSERT(nghbrs.nb_elem == 2);
-  CU_ASSERT(! list_get_index(&nghbrs, 2, &out)); // pas possible
+  CU_ASSERT(list_remove_index(&nghbrs, 0, do_nothing));
   CU_ASSERT(list_get_index(&nghbrs, 0, &out));
-  CU_ASSERT(out.x == n3.x);
-  CU_ASSERT(list_get_index(&nghbrs, 1, &out));
-  CU_ASSERT(out.x == n2.x);
+  // [22, 11]
+  CU_ASSERT(nghbrs.nb_elem == 2);
+  CU_ASSERT(out.x == 22);
 
   list_remove_index(&nghbrs, 1, do_nothing);
-  // [33]
+
+  // [22]
   CU_ASSERT(nghbrs.nb_elem == 1);
   CU_ASSERT(! list_get_index(&nghbrs, 1, &out));
   CU_ASSERT(list_get_index(&nghbrs, 0, &out));
-  CU_ASSERT(out.x == n.x);
+  CU_ASSERT(out.x == 22);
 
   list_remove_index(&nghbrs, 0, do_nothing);
   // []
   CU_ASSERT(! list_get_index(&nghbrs, 1, &out));
   CU_ASSERT(nghbrs.nb_elem == 0);
+
+  // []
+  CU_ASSERT(! list_get_index(&nghbrs, 0, &out));
 }
 
 void test_LIST_REMOVE_INDEX(void) {
   list nghbrs;
   neighbour n, n2, n3, out;
-  init_neighbour(&n, 11, 11, 42*42, VOISIN_H, 42);
+  init_neighbour(&n,  11, 11, 42*42, VOISIN_H, 42);
   init_neighbour(&n2, 22, 22, 42*42, VOISIN_H, 42);
   init_neighbour(&n3, 33, 33, 42*42, VOISIN_H, 42);
 
@@ -134,22 +170,11 @@ void test_LIST_REMOVE_INDEX(void) {
   list_add_front(&nghbrs, &n3);
   // [33, 22, 11]
 
-  // avant supression
-  CU_ASSERT(nghbrs.nb_elem == 3);
-  CU_ASSERT(list_get_index(&nghbrs, 0, &out));
-  CU_ASSERT(out.x == n3.x);
-
-  CU_ASSERT(list_get_index(&nghbrs, 1, &out));
-  CU_ASSERT(out.x == n2.x);
-
-  CU_ASSERT(list_get_index(&nghbrs, 2, &out));
-  CU_ASSERT(out.x == n.x);
-
   // après suppression de l'element au milieu
   list_remove_index(&nghbrs, 1, do_nothing);
   // [33, 11]
+  CU_ASSERT(!list_get_index(&nghbrs, 2, &out));
   CU_ASSERT(nghbrs.nb_elem == 2);
-  CU_ASSERT(! list_get_index(&nghbrs, 2, &out));
   CU_ASSERT(list_get_index(&nghbrs, 1, &out));
   CU_ASSERT(out.x == n.x);
   CU_ASSERT(list_get_index(&nghbrs, 0, &out));
@@ -165,43 +190,6 @@ void test_LIST_REMOVE_INDEX(void) {
   list_remove_index(&nghbrs, 0, do_nothing);
   // []
   // ya plus rien du tout
-  CU_ASSERT(nghbrs.nb_elem == 0);
-  CU_ASSERT(! list_get_index(&nghbrs, 0, &out));
-}
-
-void test_LIST_REMOVE_FRONT(void) {
-  list nghbrs;
-  neighbour n, n2, n3, out;
-  init_neighbour(&n, 11, 11, 42*42, VOISIN_H, 42);
-  init_neighbour(&n2, 22, 22, 42*42, VOISIN_H, 42);
-  init_neighbour(&n3, 33, 33, 42*42, VOISIN_H, 42);
-
-  init_list(&nghbrs, sizeof(neighbour));
-
-  list_add_front(&nghbrs, &n);
-  list_add_front(&nghbrs, &n2);
-  list_add_front(&nghbrs, &n3);
-  // [11, 22, 33]
-
-  CU_ASSERT(nghbrs.nb_elem == 3);
-  CU_ASSERT(list_get_index(&nghbrs, 0, &out));
-  CU_ASSERT(out.x == n.x);
-
-
-  list_remove_front(&nghbrs, do_nothing);
-  // [22, 33]
-  CU_ASSERT(nghbrs.nb_elem == 2);
-  CU_ASSERT(list_get_index(&nghbrs, 0, &out));
-  CU_ASSERT(out.x == n2.x);
-
-  list_remove_front(&nghbrs, do_nothing);
-  // [33]
-  CU_ASSERT(nghbrs.nb_elem == 1);
-  CU_ASSERT(list_get_index(&nghbrs, 0, &out));
-  CU_ASSERT(out.x == n3.x);
-
-  list_remove_front(&nghbrs, do_nothing);
-  // []
   CU_ASSERT(nghbrs.nb_elem == 0);
   CU_ASSERT(! list_get_index(&nghbrs, 0, &out));
 }
@@ -232,9 +220,9 @@ int main()
      (NULL == CU_add_test(pSuite, "test of init_list()", test_INIT_LIST)) ||
      (NULL == CU_add_test(pSuite, "test of list_add_front()", test_LIST_ADD_FRONT)) ||
      (NULL == CU_add_test(pSuite, "test of list_replace_index()", test_LIST_REPLACE_INDEX)) ||
-     //(NULL == CU_add_test(pSuite, "test of list_remove_index() version simple", test_LIST_REMOVE_INDEX_simple)) ||
+     (NULL == CU_add_test(pSuite, "test of list_remove_front()", test_LIST_REMOVE_FRONT)) ||
      (NULL == CU_add_test(pSuite, "test of list_remove_index() version moins simple", test_LIST_REMOVE_INDEX)) ||
-     (NULL == CU_add_test(pSuite, "test of list_remove_front()", test_LIST_REMOVE_FRONT))
+     (NULL == CU_add_test(pSuite, "test of list_remove_index() version simple", test_LIST_REMOVE_INDEX_simple))
 
      ) {
       CU_cleanup_registry();
