@@ -141,4 +141,9 @@ void list_clear(list *l, void(*free_function)(void *data));
  */
 int list_replace_index(list *l, int i, const void *data);
 
+/**
+ * Remove l'élément i de la liste ( i == 0 est le premier élément)
+ */
+int list_remove_index(list * l, int i , void(*free_function)(void *data));
+
 #endif

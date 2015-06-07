@@ -98,6 +98,23 @@ int list_replace_index(list * l, int i ,const void *data) {
   return 1;
 }
 
+int list_remove_index(list * l, int i, void(*free_function)(void *data)) {
+  if (i >= l->nb_elem || i < 0) return 0;
+  cell *current = l->first, *temp;
+
+  int acc = -1;
+  while(acc != (i-1)) {
+    current = current->next;
+    acc++;
+  }
+  temp = current->next;
+  current->next = temp->next;
+  l->nb_elem -= 1;
+  free_function(temp->data);
+  free(temp);
+  return 1;
+}
+
 void list_clear(list *l, void(*free_function)(void *data)) {
   cell *current = l->first, *temp;
   if(l->first == NULL)

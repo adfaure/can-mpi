@@ -174,9 +174,10 @@ void print_neighbour(const neighbour *n);
 int find_neighbour(const list *l, const pair *pair, neighbour *res );
 
 /**
- * @brief Remplit le buffer avec les valeurs de la liste TODO
+ * @brief Remplit le buffer avec les valeurs de la liste
  * @param l
  * @param buffer
+ * TODO TEST
  */
 void neighbour_to_buffer(const list *l, unsigned int buffer[MAX_SIZE_BUFFER]);
 
@@ -221,9 +222,9 @@ int is_over_neighbour(const neighbour *n1, const neighbour *n2);
  * @param n1
  * @param n2
  * @return
- + NOT TESTED
+ * TODO  TESTED
  */
-int are_equals_neighbours(const neighbour*n1, const neighbour *n2) {
+int are_equals_neighbours(const neighbour*n1, const neighbour *n2);
 
 /**
  * @brief are_over_neighbour

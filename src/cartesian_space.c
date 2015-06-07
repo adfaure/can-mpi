@@ -164,21 +164,17 @@ void init_neighbour(neighbour *n,  unsigned int x,  unsigned int y,  unsigned in
 }
 
 int is_neighbour(const land *land,  const neighbour *n) {
-    printf(" is neigh ");
-  if(is_neighbour_top(land,  n)) {
-    printf(" is TOP \n");
+  if(n->size <= 0) {
+	return VOISIN_NONE;
+  } else if(is_neighbour_top(land,  n)) {
     return VOISIN_TOP;
   } else if (is_neighbour_bot(land,  n)) {
-    printf(" is BOT \n");
     return VOISIN_BOT;
   } else if(is_neighbour_left(land,  n)) {
-    printf(" is LEFT \n");
     return VOISIN_LEFT;
   } else if(is_neighbour_right(land,  n)) {
-    printf(" is RIGHT \n");
     return VOISIN_RIGHT;
   } else {
-    printf(" is NONE \n");
     return VOISIN_NONE;
   }
 }
@@ -245,15 +241,17 @@ int update_neighbours(list *list, const land*land,   const neighbour *new_n) {
   neighbour temp;
   for(int i = 0; i < list->nb_elem; i++) {
     list_get_index(list,  i,  &temp);
-    printf("job ici \n");
-    print_neighbour(new_n);
-    print_neighbour(&temp);
-    if(are_over_neighbour(new_n,  &temp)) {
-      update_border(&temp,  new_n);
+    if(update_border(&temp,  new_n)) {
       if(!is_neighbour(land,  &temp)) {
-        printf("nous ne somme plus voisins :'( \n");
+    	  print_neighbour(&temp);
+      	printf("------------------------------------ update ------------------------------------ \n");
+    	  list_apply(list, print_neighbour_cb);
+    	  list_remove_index(list, i, free_neighbour_cb);
+        printf("------------------------------------ rmoved ------------------------------------ \n");
+    	  list_apply(list, print_neighbour_cb);
+      } else {
+    	list_replace_index(list,  i,  &temp);
       }
-      list_replace_index(list,  i,  &temp);
     }
   }
   return 0;
