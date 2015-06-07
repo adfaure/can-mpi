@@ -128,6 +128,27 @@ void test_SPLIT_LAND(void) {
   CU_ASSERT(!is_land_contains(&new, 999, 500));
 }
 
+void test_IS_NEIGHBOUR(void) {
+  land l1;
+  init_land(&l1, 500, 250, 250, 500); // ((500,  250),  (250,  500))
+
+  neighbour n_top, n_bot1, n_bot2, n_ri1, n_ri2, n_le1, n_le2;
+  init_neighbour(&n_top, 500, 250, 250, VOISIN_H, 0); // frontière haute
+  init_neighbour(&n_bot1, 500, 750, 125, VOISIN_H, 0); // frontière en bas, partie gauche
+  init_neighbour(&n_bot2, 625, 750, 125, VOISIN_H, 0); // frontière en bas, partie droite
+  init_neighbour(&n_ri1, 750, 500, 125, VOISIN_V, 0); // frontière a droite, partie haute
+  init_neighbour(&n_ri2, 750, 625, 125, VOISIN_V, 0); // frontière en droite, partie basse
+  init_neighbour(&n_le1, 500, 500, 125, VOISIN_V, 0); // frontière a gauche, partie haute
+  init_neighbour(&n_le2, 500, 625, 125, VOISIN_V, 0); // frontière en gauche, partie basse
+  CU_ASSERT(is_neighbour(&l1, &n_top));
+  CU_ASSERT(is_neighbour(&l1, &n_bot1));
+  CU_ASSERT(is_neighbour(&l1, &n_bot2));
+  CU_ASSERT(is_neighbour(&l1, &n_ri1));
+  CU_ASSERT(is_neighbour(&l1, &n_ri2));
+  CU_ASSERT(is_neighbour(&l1, &n_le1));
+  CU_ASSERT(is_neighbour(&l1, &n_le2));
+}
+
 void test_IS_NEIGHBOUR_BOT(void) {
   neighbour n;
   land l;
@@ -350,21 +371,53 @@ void test_UPDATE_BORDER(void) {
   CU_ASSERT(n1.y    ==  0);
 }
 
-void test_IS_NEIGHBOUR(void) {
-  land l1;
-  init_land(&l1, 500, 500, 250, 250); // ((500,  250),  (500,  250))
-
-  neighbour n_top, n_bot1, n_bot2;
-  init_neighbour(&n_top, 500, 500, 250, VOISIN_H, 0); // frontière haute
-  init_neighbour(&n_bot1, 500, 750, 125, VOISIN_H, 0); // frontière en bas, partie gauche
-  init_neighbour(&n_bot1, 625, 750, 125, VOISIN_H, 0); // frontière en bas, partie droite
-  CU_ASSERT(is_neighbour(&l1, &n_top));
-  CU_ASSERT(is_neighbour(&l1, &n_bot1));
-  CU_ASSERT(is_neighbour(&l1, &n_bot2));
+void print_one_neighbour(void * nghbr) {
+  print_neighbour((neighbour *) nghbr);
 }
 
 void test_SPLIT_LAND_UPDATE_NEIGHBOUR(void) {
-  // TODO implement ME !
+  land l1, l_out;
+  init_land(&l1, 500, 250, 250, 500); // ((500,  250),  (250,  500))
+  print_land(&l1);
+
+  list nghbrs1, nghbrs_out;
+  init_list(&nghbrs1, sizeof(neighbour));
+  init_list(&nghbrs_out, sizeof(neighbour));
+
+  neighbour n_top, n_bot1, n_bot2, n_ri1, n_ri2, n_le1, n_le2;
+  init_neighbour(&n_top, 500, 500, 250, VOISIN_H, 0); // frontière haute
+  init_neighbour(&n_bot1, 500, 750, 125, VOISIN_H, 0); // frontière en bas, partie gauche
+  init_neighbour(&n_bot2, 625, 750, 125, VOISIN_H, 0); // frontière en bas, partie droite
+  init_neighbour(&n_ri1, 750, 500, 125, VOISIN_V, 0); // frontière a droite, partie haute
+  init_neighbour(&n_ri2, 750, 625, 125, VOISIN_V, 0); // frontière en droite, partie basse
+  init_neighbour(&n_le1, 500, 500, 125, VOISIN_V, 0); // frontière a gauche, partie haute
+  init_neighbour(&n_le2, 500, 625, 125, VOISIN_V, 0); // frontière en gauche, partie basse
+
+  list_add_front(&nghbrs1, &n_top);
+  list_add_front(&nghbrs1, &n_bot1);
+  list_add_front(&nghbrs1, &n_bot2);
+  list_add_front(&nghbrs1, &n_ri1);
+  list_add_front(&nghbrs1, &n_ri2);
+  list_add_front(&nghbrs1, &n_le1);
+  list_add_front(&nghbrs1, &n_le2);
+
+  split_land_update_neighbour(&l_out, &l1, &nghbrs_out, &nghbrs1, 42, 43);
+  print_land(&l1);    // ((500,  250),  (250,  250))
+  print_land(&l_out); // ((500,  250),  (500,  250))
+
+  // l1 devrait avoir dans sa liste :
+  //   n_top, et deux petits bouts des anciennes frontières n_l1 et n_r1, et une frontière basse
+  CU_ASSERT(nghbrs1.nb_elem == 3);
+  printf("**\n");
+  list_apply(&nghbrs1, print_one_neighbour);
+  printf("**\n");
+
+  // l_out devrait avoir dans sa liste:
+  //  n_bot1, n_bot2, n_l2, n_r2, et deux petits bouts des anciennes frontières n_l1 et n_r1, et une frontière haute
+  CU_ASSERT(nghbrs_out.nb_elem == 6);
+  printf("**\n");
+  list_apply(&nghbrs_out, print_one_neighbour);
+  printf("**\n");
 }
 
 /* The main() function for setting up and running the tests.
@@ -402,7 +455,8 @@ int main()
      (NULL == CU_add_test(pSuite, "test of is_contains_neighbour()", test_IS_CONTAINS_NEIGHBOUR)) ||
      (NULL == CU_add_test(pSuite, "test of is_contains_neighbour_end()", test_IS_OVER_NEIGHBOUR_END)) ||
      (NULL == CU_add_test(pSuite, "test of land_extract_neighbourg_after_split()", test_LAND_EXTRACT_NEIGHBOURG_AFTER_SPLIT)) ||
-     (NULL == CU_add_test(pSuite, "test of update_border()", test_UPDATE_BORDER))
+     (NULL == CU_add_test(pSuite, "test of update_border()", test_UPDATE_BORDER)) ||
+     (NULL == CU_add_test(pSuite, "test of split_land_update_neighbour()", test_SPLIT_LAND_UPDATE_NEIGHBOUR))
 
      ) {
       CU_cleanup_registry();
