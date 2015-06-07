@@ -321,7 +321,7 @@ void test_ADJUST_NEIGHBOUR(void) {
   land_extract_neighbourg_after_split(&new, &old, &n1, &n2);
   // n1 et n1 contiennent la frontière entre new et old
   split_land(&new2, &new); // new2: ((250,  250),  (500,  500))
-  print_land(&new2);
+  //print_land(&new2);
   //print_neighbour(&n1);
   CU_ASSERT(n1.x == 0);
   CU_ASSERT(n1.y == 500);
@@ -512,6 +512,40 @@ void test_SPLIT_LAND_UPDATE_NEIGHBOUR(void) {
   // TODO FINIR LE TEST
 }
 
+
+
+void test_UPDATE_NEIGHBOURS(void) {
+  land la;
+  neighbour n, n2, n_out;
+  list li;
+
+  // ---------
+  // |   |   |
+  // | 1 |   |
+  // |   |   |
+  // ---------
+
+  init_land(&la, 0, 0, 500, 1000); // rectangle vertical
+  init_list(&li, sizeof(neighbour));
+  init_neighbour(&n, 500, 0, 1000, VOISIN_V, 42); // | [42] (500,  0),  (1000)
+  list_add_front(&li, &n);
+  CU_ASSERT(li.nb_elem == 1);
+  CU_ASSERT(is_neighbour(&la, &n));
+
+  // use case
+  // la partie droite se splite
+  // n2 nouvelle bordure entre 1 et le "land" en bas à droite
+  init_neighbour(&n2, 500, 500, 500, VOISIN_V, 43); // | [43] (500,  500),  (500)
+  update_neighbours(&li, &la, &n2);
+  CU_ASSERT(li.nb_elem == 2);
+  CU_ASSERT(list_get_index(&li, 0, &n_out));
+  CU_ASSERT(n_out.x == 500);
+  CU_ASSERT(n_out.y == 500);
+  CU_ASSERT(list_get_index(&li, 1, &n_out));
+  CU_ASSERT(n_out.x == 500);
+  CU_ASSERT(n_out.y == 0);
+}
+
 /* The main() function for setting up and running the tests.
  * Returns a CUE_SUCCESS on successful running, another
  * CUnit error code on failure.
@@ -548,7 +582,8 @@ int main()
      (NULL == CU_add_test(pSuite, "test of is_contains_neighbour_end()", test_IS_OVER_NEIGHBOUR_END)) ||
      (NULL == CU_add_test(pSuite, "test of land_extract_neighbourg_after_split()", test_LAND_EXTRACT_NEIGHBOURG_AFTER_SPLIT)) ||
      (NULL == CU_add_test(pSuite, "test of update_border()", test_UPDATE_BORDER)) ||
-     (NULL == CU_add_test(pSuite, "test of split_land_update_neighbour()", test_SPLIT_LAND_UPDATE_NEIGHBOUR))
+     (NULL == CU_add_test(pSuite, "test of split_land_update_neighbour()", test_SPLIT_LAND_UPDATE_NEIGHBOUR)) ||
+     (NULL == CU_add_test(pSuite, "test of test_UPDATE_NEIGHBOURS()", test_UPDATE_NEIGHBOURS))
 
      ) {
       CU_cleanup_registry();

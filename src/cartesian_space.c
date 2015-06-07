@@ -1,5 +1,4 @@
 #include "cartesian_space.h"
-#include "svg_format.h"
 
 int CAN_Send_neighbour(const neighbour *neig, int mpi_tag, int mpi_destinataire,  MPI_Comm comm) {
     unsigned int buffer[5],  size = (int) (sizeof(neighbour) / sizeof(unsigned int));
@@ -248,19 +247,29 @@ void print_neighbour(const neighbour *n) {
     }
 }
 
-int update_neighbours(list *list, const land*land, const neighbour *new_n) {
-    neighbour temp;
-    for(int i = 0; i < list->nb_elem; i++) {
-        list_get_index(list,  i,  &temp);
-        if(update_border(&temp,  new_n)) {
-            if(!is_neighbour(land,  &temp)) {
-                list_remove_index(list, i, free_neighbour_cb);
-            } else {
-                list_replace_index(list,  i,  &temp);
-            }
-        }
+void do_really_nothing (void * n) {}
+
+int update_neighbours(list *l, const land*land, const neighbour *new_n) {
+  neighbour temp;
+
+  list list_cp;
+  list_cp_revert(l, do_really_nothing, &list_cp);
+  list_clear(l, do_really_nothing);
+
+  for(int i = 0; i < list_cp.nb_elem; i++) {
+    list_get_index(&list_cp,  i,  &temp);
+    if(update_border(&temp,  new_n)) {
+      if(!is_neighbour(land,  &temp)) {
+        // :((
+      } else {
+        list_add_front(l, &temp);
+      }
+    } else {
+      list_add_front(l, &temp);
     }
-    return 0;
+  }
+  list_add_front(l, new_n);
+  return 0;
 }
 
 int are_equals_neighbours(const neighbour*n1, const neighbour *n2) {
@@ -484,4 +493,3 @@ void create_svg_logs(const char* path,const int size_x, const int size_y ,const 
     fprintf(f, "</svg> \n");
     fclose(f);
 }
-
