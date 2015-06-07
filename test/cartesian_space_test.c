@@ -350,6 +350,23 @@ void test_UPDATE_BORDER(void) {
   CU_ASSERT(n1.y    ==  0);
 }
 
+void test_IS_NEIGHBOUR(void) {
+  land l1;
+  init_land(&l1, 500, 500, 250, 250); // ((500,  250),  (500,  250))
+
+  neighbour n_top, n_bot1, n_bot2;
+  init_neighbour(&n_top, 500, 500, 250, VOISIN_H, 0); // frontière haute
+  init_neighbour(&n_bot1, 500, 750, 125, VOISIN_H, 0); // frontière en bas, partie gauche
+  init_neighbour(&n_bot1, 625, 750, 125, VOISIN_H, 0); // frontière en bas, partie droite
+  CU_ASSERT(is_neighbour(&l1, &n_top));
+  CU_ASSERT(is_neighbour(&l1, &n_bot1));
+  CU_ASSERT(is_neighbour(&l1, &n_bot2));
+}
+
+void test_SPLIT_LAND_UPDATE_NEIGHBOUR(void) {
+  // TODO implement ME !
+}
+
 /* The main() function for setting up and running the tests.
  * Returns a CUE_SUCCESS on successful running, another
  * CUnit error code on failure.
@@ -381,10 +398,11 @@ int main()
      (NULL == CU_add_test(pSuite, "test of is_neighbour_top()", test_IS_NEIGHBOUR_TOP)) ||
      (NULL == CU_add_test(pSuite, "test of is_neighbour_left()", test_IS_NEIGHBOUR_LEFT)) ||
      (NULL == CU_add_test(pSuite, "test of is_neighbour_right()", test_IS_NEIGHBOUR_RIGHT)) ||
+     (NULL == CU_add_test(pSuite, "test of test_is_neighbour()", test_IS_NEIGHBOUR)) ||
      (NULL == CU_add_test(pSuite, "test of is_contains_neighbour()", test_IS_CONTAINS_NEIGHBOUR)) ||
      (NULL == CU_add_test(pSuite, "test of is_contains_neighbour_end()", test_IS_OVER_NEIGHBOUR_END)) ||
      (NULL == CU_add_test(pSuite, "test of land_extract_neighbourg_after_split()", test_LAND_EXTRACT_NEIGHBOURG_AFTER_SPLIT)) ||
-	 (NULL == CU_add_test(pSuite, "test of update_border()", test_UPDATE_BORDER))
+     (NULL == CU_add_test(pSuite, "test of update_border()", test_UPDATE_BORDER))
 
      ) {
       CU_cleanup_registry();
