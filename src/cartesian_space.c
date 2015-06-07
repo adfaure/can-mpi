@@ -476,7 +476,9 @@ void create_svg_logs(const char* path,const int size_x, const int size_y ,const 
 		list_get_index(list_lands, i, &temp_land);
 		text_size_x =  temp_land.x + (temp_land.size_x/2) ;
 		text_size_y =  temp_land.y + (temp_land.size_y/2);
-		fprintf(f, "<text x=\"%d\" y=\"%d\">%d</text>\n", text_size_x, text_size_y ,(list_lands->nb_elem  - i) );
+		fprintf(f, "<text x=\"%d\" y=\"%d\" fill=\"#%x\" >", text_size_x, text_size_y , ~(i+1) * color);
+		fprintf(f, "%d", (list_lands->nb_elem - i));
+		fprintf(f, "</text> ");
 	}
 
 	fprintf(f, "</svg> \n");
