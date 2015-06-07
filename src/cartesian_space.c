@@ -28,28 +28,33 @@ int CAN_Receive_neighbour(neighbour *neig, int mpi_tag, int mpi_src,  MPI_Comm c
   return 1;
 }
 
-void split_land_update_neighbour(land *new_land,  land *old_land,  list *new_n, list *old_n,  int new_rank,  int old_rank) {
+void split_land_update_neighbour(land *new_land,  land *old_land,
+			list *new_n, list *old_n,  int new_rank,  int old_rank) {
   neighbour temp, old, new;
+  list list_cp;
   split_land(new_land,  old_land);
   land_extract_neighbourg_after_split(new_land,  old_land,  &old,  &new);
   old.com_rank = new_rank;
   new.com_rank = old_rank;
-  for(int i = 0; i < old_n->nb_elem; i++) {
-    list_get_index(old_n, i, &temp);
+  list_cp_revert(old_n,free_neighbour_cb,&list_cp);
+  list_clear(old_n, free_neighbour_cb);
+
+  for(int i = 0; i < list_cp.nb_elem; i++) {
+    list_get_index(&list_cp, i, &temp);
     if(is_neighbour(new_land,  &temp)) {
       adjust_neighbour(new_land,  &temp);
       list_add_front(new_n,  &temp);
     }
-    list_get_index(old_n, i,  &temp);
+    list_get_index(&list_cp, i,  &temp);
 
     if(is_neighbour(old_land,  &temp)) {
-      if(adjust_neighbour(old_land,  &temp)) {
-        list_replace_index(old_n,  i,  &temp);
-      }
+      adjust_neighbour(old_land,  &temp);
+      list_add_front(old_n, &temp);
     }
   }
   list_add_front(new_n,  &new);
   list_add_front(old_n,  &old);
+  list_clear(&list_cp, free_neighbour_cb);
 }
 
 int adjust_neighbour(land *land,  neighbour *n) {
@@ -166,7 +171,7 @@ void init_neighbour(neighbour *n,  unsigned int x,  unsigned int y,  unsigned in
 
 int is_neighbour(const land *land,  const neighbour *n) {
   if(!is_neighbour_valid(n)) {
-	  return VOISIN_NONE;
+	 return VOISIN_NONE;
   } else if(is_neighbour_top(land,  n)) {
     return VOISIN_TOP;
   } else if (is_neighbour_bot(land,  n)) {
@@ -198,11 +203,12 @@ void neighbour_to_buffer(const list *l,  unsigned int buffer[MAX_SIZE_BUFFER]) {
   }
 }
 
+
 bool is_neighbour_top(const land *land, const neighbour *n) {
     if(n->orientation == VOISIN_V)
       return false;
 
-    bool temp = (land->x <= n->x && n->x <= land->x + land->size_x) || (land->x <= n->x + n->size && n->x + n->size <= land->x + land->size_x);
+    bool temp = (land->x <= n->x && n->x < land->x + land->size_x) || (land->x <= n->x + n->size && n->x + n->size < land->x + land->size_x);
     return temp && (land->y == n->y);
 }
 
@@ -210,7 +216,7 @@ bool is_neighbour_bot(const land *land,  const neighbour *n) {
     if(n->orientation == VOISIN_V)
       return false;
 
-    bool temp = (land->x <= n->x && n->x <= land->x + land->size_x) || (land->x <= n->x + n->size && n->x + n->size <= land->x + land->size_x);
+    bool temp = (land->x <= n->x && n->x < land->x + land->size_x) || (land->x <= n->x + n->size && n->x + n->size < land->x + land->size_x);
     return temp && (n->y == land->y + land->size_y);
 }
 
@@ -218,7 +224,7 @@ bool is_neighbour_left(const land *land,  const neighbour *n) {
     if(n->orientation == VOISIN_H)
       return false;
 
-    bool temp = (land->y <= n->y && n->y <= land->y + land->size_y) || (land->y <= n->y + n->size && n->y + n->size <= land->y + land->size_y);
+    bool temp = (land->y <= n->y && n->y < land->y + land->size_y) || (land->y <= n->y + n->size && n->y + n->size < land->y + land->size_y);
     return temp && (n->x == land->x);
 }
 
@@ -226,7 +232,7 @@ bool is_neighbour_right(const land *land,  const neighbour *n) {
     if(n->orientation == VOISIN_H)
       return false;
 
-      bool temp = (land->y <= n->y && n->y <= land->y + land->size_y) || (land->y <= n->y + n->size && n->y + n->size <= land->y + land->size_y);
+      bool temp = (land->y <= n->y && n->y < land->y + land->size_y) || (land->y + land->size_y <= n->y + n->size && n->y + n->size < land->y + land->size_y);
       return temp && (n->x == land->x + land->size_x);
 }
 

@@ -152,4 +152,10 @@ int list_remove_index(list * l, int i , void(*free_function)(void *data));
  */
 int list_remove_front(list *l, void(*free_function)(void *data));
 
+/**
+ *
+ * TODO NOT TESTED
+ */
+int list_cp_revert(const list *src, void(*free_function)(void *data), list *dst);
+
 #endif

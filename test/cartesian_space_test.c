@@ -166,6 +166,15 @@ void test_IS_NEIGHBOUR_BOT(void) {
 
   init_land(&l, 0, 0, 490, 500);
   CU_ASSERT(!is_neighbour_bot(&l, &n));
+
+  init_land(&l, 500 , 250, 250, 250);
+  init_neighbour(&n, 500, 750, 125, VOISIN_H, 0);
+  CU_ASSERT(!is_neighbour_bot(&l, &n));
+
+  init_neighbour(&n, 625, 750, 125 , VOISIN_H, 0);
+  CU_ASSERT(!is_neighbour_bot(&l, &n));
+
+
 }
 
 void test_IS_NEIGHBOUR_TOP(void) {
@@ -224,6 +233,15 @@ void test_IS_NEIGHBOUR_RIGHT(void) {
 
   init_land(&l, 0, 0, 490, 500);
   CU_ASSERT(!is_neighbour_right(&l, &n));
+
+  init_land(&l, 500, 250, 250, 250);
+  init_neighbour(&n, 750, 500, 125, VOISIN_V, 0);
+  CU_ASSERT(!is_neighbour_right(&l, &n));
+
+  init_land(&l, 500, 500, 250, 250);
+  init_neighbour(&n, 750, 250, 500, VOISIN_V, 0);
+  CU_ASSERT(is_neighbour_right(&l, &n));
+
 }
 
 void test_IS_CONTAINS_NEIGHBOUR(void) {
@@ -375,6 +393,8 @@ void print_one_neighbour(void * nghbr) {
   print_neighbour((neighbour *) nghbr);
 }
 
+void do_nothing (void * n) {}
+
 void test_SPLIT_LAND_UPDATE_NEIGHBOUR(void) {
   land l1, l_out;
   init_land(&l1, 500, 250, 250, 500); // ((500,  250),  (250,  500))
@@ -385,39 +405,94 @@ void test_SPLIT_LAND_UPDATE_NEIGHBOUR(void) {
   init_list(&nghbrs_out, sizeof(neighbour));
 
   neighbour n_top, n_bot1, n_bot2, n_ri1, n_ri2, n_le1, n_le2;
-  init_neighbour(&n_top, 500, 500, 250, VOISIN_H, 0); // frontière haute
-  init_neighbour(&n_bot1, 500, 750, 125, VOISIN_H, 0); // frontière en bas, partie gauche
-  init_neighbour(&n_bot2, 625, 750, 125, VOISIN_H, 0); // frontière en bas, partie droite
-  init_neighbour(&n_ri1, 750, 500, 125, VOISIN_V, 0); // frontière a droite, partie haute
-  init_neighbour(&n_ri2, 750, 625, 125, VOISIN_V, 0); // frontière en droite, partie basse
-  init_neighbour(&n_le1, 500, 500, 125, VOISIN_V, 0); // frontière a gauche, partie haute
-  init_neighbour(&n_le2, 500, 625, 125, VOISIN_V, 0); // frontière en gauche, partie basse
-
+  init_neighbour(&n_top, 500, 250, 250, VOISIN_H, 666); // frontière haute
   list_add_front(&nghbrs1, &n_top);
+
+  split_land_update_neighbour(&l_out, &l1, &nghbrs_out, &nghbrs1, 42, 43);
+
+  CU_ASSERT(nghbrs1.nb_elem == 2);
+  CU_ASSERT(nghbrs_out.nb_elem == 1);
+
+
+  list_clear(&nghbrs_out,do_nothing);
+  list_clear(&nghbrs1 ,do_nothing);
+
+  init_land(&l1, 500, 250, 250, 500); // ((500,  250),  (250,  500))
+  init_neighbour(&n_top, 500, 250, 250,  VOISIN_H, 666); // frontière haute
+  init_neighbour(&n_bot1, 500, 750, 125, VOISIN_H, 58);  // frontière en bas, partie gauche
+  init_neighbour(&n_bot2, 625, 750, 125, VOISIN_H, 15);  // frontière en bas, partie droite
+  list_add_front(&nghbrs1, &n_top );
+  list_add_front(&nghbrs1, &n_bot1);
+  list_add_front(&nghbrs1, &n_bot2);
+
+  split_land_update_neighbour(&l_out, &l1, &nghbrs_out, &nghbrs1, 42, 43);
+
+  CU_ASSERT(nghbrs1.nb_elem == 2);
+  CU_ASSERT(nghbrs_out.nb_elem == 3);
+
+
+  list_clear(&nghbrs_out,do_nothing);
+  list_clear(&nghbrs1 ,do_nothing);
+
+  init_land(&l1, 500, 250, 250, 500); // ((500,  250),  (250,  500))
+  init_neighbour(&n_top, 500, 250, 250,  VOISIN_H, 666); // frontière haute
+  init_neighbour(&n_bot1, 500, 750, 125, VOISIN_H, 58);  // frontière en bas, partie gauche
+  init_neighbour(&n_bot2, 625, 750, 125, VOISIN_H, 15);  // frontière en bas, partie droite
+
+
+  list_add_front(&nghbrs1, &n_top );
+  list_add_front(&nghbrs1, &n_bot1);
+  list_add_front(&nghbrs1, &n_bot2);
+
+  split_land_update_neighbour(&l_out, &l1, &nghbrs_out, &nghbrs1, 42, 43);
+
+  CU_ASSERT(nghbrs1.nb_elem == 2);
+  CU_ASSERT(nghbrs_out.nb_elem == 3);
+
+  list_clear(&nghbrs_out,do_nothing);
+  list_clear(&nghbrs1 ,do_nothing);
+  init_land(&l1, 500, 250, 250, 500); // ((500,  250),  (250,  500))
+
+  init_neighbour(&n_top, 500, 250, 250,  VOISIN_H, 666); // frontière haute
+  init_neighbour(&n_bot1, 500, 750, 125, VOISIN_H, 58);  // frontière en bas, partie gauche
+  init_neighbour(&n_bot2, 625, 750, 125, VOISIN_H, 15);  // frontière en bas, partie droite
+  init_neighbour(&n_ri1, 750, 500, 125, VOISIN_V, 28);   // frontière a droite, partie haute
+  init_neighbour(&n_ri2, 750, 250, 500, VOISIN_V, 89);   // frontière en droite, partie basse
+
+  list_add_front(&nghbrs1, &n_top );
+  list_add_front(&nghbrs1, &n_bot1);
+  list_add_front(&nghbrs1, &n_bot2);
+  list_add_front(&nghbrs1, &n_ri1);
+  list_add_front(&nghbrs1, &n_ri2);
+
+  split_land_update_neighbour(&l_out, &l1, &nghbrs_out, &nghbrs1, 42, 43);
+
+
+  CU_ASSERT(nghbrs1.nb_elem == 3);
+  CU_ASSERT(nghbrs_out.nb_elem == 6);
+
+/*
+  list_clear(&nghbrs_out,do_nothing);
+  list_clear(&nghbrs1 ,do_nothing);
+  init_land(&l1, 500, 250, 250, 500); // ((500,  250),  (250,  500))
+
+  init_neighbour(&n_top, 500, 250, 250,  VOISIN_H, 666); // frontière haute
+  init_neighbour(&n_bot1, 500, 750, 125, VOISIN_H, 58);  // frontière en bas, partie gauche
+  init_neighbour(&n_bot2, 625, 750, 125, VOISIN_H, 15);  // frontière en bas, partie droite
+  init_neighbour(&n_ri1, 750, 500, 125, VOISIN_V, 28); // frontière a droite, partie haute
+  init_neighbour(&n_ri2, 750, 625, 125, VOISIN_V, 69); // frontière en droite, partie basse
+  init_neighbour(&n_le1, 500, 500, 125, VOISIN_V, 78); // frontière a gauche, partie haute
+  init_neighbour(&n_le2, 500, 625, 125, VOISIN_V, 32); // frontière en gauche, partie basse
+
+  list_add_front(&nghbrs1, &n_top );
   list_add_front(&nghbrs1, &n_bot1);
   list_add_front(&nghbrs1, &n_bot2);
   list_add_front(&nghbrs1, &n_ri1);
   list_add_front(&nghbrs1, &n_ri2);
   list_add_front(&nghbrs1, &n_le1);
   list_add_front(&nghbrs1, &n_le2);
-
   split_land_update_neighbour(&l_out, &l1, &nghbrs_out, &nghbrs1, 42, 43);
-  print_land(&l1);    // ((500,  250),  (250,  250))
-  print_land(&l_out); // ((500,  250),  (500,  250))
-
-  // l1 devrait avoir dans sa liste :
-  //   n_top, et deux petits bouts des anciennes frontières n_l1 et n_r1, et une frontière basse
-  CU_ASSERT(nghbrs1.nb_elem == 3);
-  printf("**\n");
-  list_apply(&nghbrs1, print_one_neighbour);
-  printf("**\n");
-
-  // l_out devrait avoir dans sa liste:
-  //  n_bot1, n_bot2, n_l2, n_r2, et deux petits bouts des anciennes frontières n_l1 et n_r1, et une frontière haute
-  CU_ASSERT(nghbrs_out.nb_elem == 7);
-  printf("**\n");
-  list_apply(&nghbrs_out, print_one_neighbour);
-  printf("**\n");
+ */
 }
 
 /* The main() function for setting up and running the tests.

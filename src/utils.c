@@ -126,6 +126,17 @@ int list_remove_front(list *l, void(*free_function)(void *data)) {
 	return 1;
 }
 
+int list_cp_revert(const list *src, void(*free_function)(void *data), list *dst) {
+	void *temp = malloc(sizeof(src->element_size));
+	init_list(dst,src->element_size);
+	for(int i = 0; i < src->nb_elem ; i++) {
+		list_get_index(src, i, temp);
+		list_add_front(dst, temp);
+	}
+	free(temp);
+	return 1;
+}
+
 void list_clear(list *l, void(*free_function)(void *data)) {
   cell *current = l->first, *temp;
   if(l->first == NULL)
