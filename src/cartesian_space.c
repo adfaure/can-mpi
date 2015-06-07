@@ -208,7 +208,7 @@ bool is_neighbour_top(const land *land, const neighbour *n) {
     if(n->orientation == VOISIN_V)
       return false;
 
-    bool temp = (land->x <= n->x && n->x < land->x + land->size_x) || (land->x <= n->x + n->size && n->x + n->size < land->x + land->size_x);
+    bool temp = (land->x <= n->x && n->x < land->x + land->size_x) || (land->x < n->x + n->size && n->x + n->size <= land->x + land->size_x);
     return temp && (land->y == n->y);
 }
 
@@ -216,7 +216,7 @@ bool is_neighbour_bot(const land *land,  const neighbour *n) {
     if(n->orientation == VOISIN_V)
       return false;
 
-    bool temp = (land->x <= n->x && n->x < land->x + land->size_x) || (land->x <= n->x + n->size && n->x + n->size < land->x + land->size_x);
+    bool temp = (land->x <= n->x && n->x < land->x + land->size_x) || (land->x < n->x + n->size && n->x + n->size <= land->x + land->size_x);
     return temp && (n->y == land->y + land->size_y);
 }
 
@@ -224,16 +224,16 @@ bool is_neighbour_left(const land *land,  const neighbour *n) {
     if(n->orientation == VOISIN_H)
       return false;
 
-    bool temp = (land->y <= n->y && n->y < land->y + land->size_y) || (land->y <= n->y + n->size && n->y + n->size < land->y + land->size_y);
+    bool temp = (land->y <= n->y && n->y < land->y + land->size_y) || (land->y < n->y + n->size && n->y + n->size <= land->y + land->size_y);
     return temp && (n->x == land->x);
 }
 
 bool is_neighbour_right(const land *land,  const neighbour *n) {
-    if(n->orientation == VOISIN_H)
-      return false;
+	if(n->orientation == VOISIN_H)
+	  return false;
 
-      bool temp = (land->y <= n->y && n->y < land->y + land->size_y) || (land->y + land->size_y <= n->y + n->size && n->y + n->size < land->y + land->size_y);
-      return temp && (n->x == land->x + land->size_x);
+    bool temp = (land->y <= n->y && n->y < land->y + land->size_y) || (land->y < n->y + n->size && n->y + n->size <= land->y + land->size_y);
+    return temp && (n->x == land->x + land->size_x);
 }
 
 void print_neighbour(const neighbour *n) {

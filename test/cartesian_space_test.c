@@ -469,9 +469,9 @@ void test_SPLIT_LAND_UPDATE_NEIGHBOUR(void) {
 
 
   CU_ASSERT(nghbrs1.nb_elem == 3);
-  CU_ASSERT(nghbrs_out.nb_elem == 6);
+  CU_ASSERT(nghbrs_out.nb_elem == 5);
 
-/*
+
   list_clear(&nghbrs_out,do_nothing);
   list_clear(&nghbrs1 ,do_nothing);
   init_land(&l1, 500, 250, 250, 500); // ((500,  250),  (250,  500))
@@ -492,7 +492,12 @@ void test_SPLIT_LAND_UPDATE_NEIGHBOUR(void) {
   list_add_front(&nghbrs1, &n_le1);
   list_add_front(&nghbrs1, &n_le2);
   split_land_update_neighbour(&l_out, &l1, &nghbrs_out, &nghbrs1, 42, 43);
- */
+
+  printf("\n");
+  list_apply(&nghbrs1 , print_one_neighbour);
+  printf("\n");
+  list_apply(&nghbrs_out , print_one_neighbour);
+  // TODO FINIR LE TEST
 }
 
 /* The main() function for setting up and running the tests.
