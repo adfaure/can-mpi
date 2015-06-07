@@ -67,6 +67,12 @@ int CAN_Send_neighbour_list(const list *l, int mpi_tag, int mpi_destinataire, MP
  */
 void init_neighbour(neighbour *n, unsigned int x, unsigned int y, unsigned int size, unsigned int or, unsigned int com_rank);
 
+/**
+ * @brief Vérifie si la frontière est valide
+ *  Une frontière est valide ssi sa taille est > 0
+ * Utile quand on souhaite invalider une frontière
+ */
+int is_neighbour_valid(const neighbour *n);
 
 /**
  * @brief  Vérifie si le voisin neighbour partage une frontière avec land.

@@ -179,6 +179,14 @@ int is_neighbour(const land *land,  const neighbour *n) {
   }
 }
 
+int is_neighbour_valid(const neighbour *n) {
+  if (n->size > 0) {
+    return 1; // valid
+  } else {
+    return 0; // not valid
+  }
+}
+
 void neighbour_to_buffer(const list *l,  unsigned int buffer[MAX_SIZE_BUFFER]) {
   neighbour temp;
   int idx = 0;
