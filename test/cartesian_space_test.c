@@ -414,7 +414,7 @@ void test_SPLIT_LAND_UPDATE_NEIGHBOUR(void) {
 
   // l_out devrait avoir dans sa liste:
   //  n_bot1, n_bot2, n_l2, n_r2, et deux petits bouts des anciennes frontières n_l1 et n_r1, et une frontière haute
-  CU_ASSERT(nghbrs_out.nb_elem == 6);
+  CU_ASSERT(nghbrs_out.nb_elem == 7);
   printf("**\n");
   list_apply(&nghbrs_out, print_one_neighbour);
   printf("**\n");
