@@ -120,11 +120,9 @@ int CAN_Node_Job(int com_rank, MPI_Comm comm) {
         if(wait_for != -1) {
             printf("je suis [%d] en attente d'un message de %d \n", com_rank, wait_for);
         }
-        printf("[ %d ] en attente de message \n", com_rank);
         MPI_Probe(wait_for, MPI_ANY_TAG, MPI_COMM_WORLD, &main_loop_status);
         main_loop_from = main_loop_status.MPI_SOURCE;
         main_loop_tag  = main_loop_status.MPI_TAG;
-        printf("[ %d ],  recu %d, from %d \n", com_rank, main_loop_tag ,main_loop_from );
         if(main_loop_tag == ROOT_TAG_INIT_NODE) {
             MPI_Get_count (&main_loop_status, MPI_INT, &count);
             MPI_Recv(&main_loop_buffer_int[0] ,count , MPI_INT, main_loop_from,
@@ -163,7 +161,7 @@ int CAN_Node_Job(int com_rank, MPI_Comm comm) {
             MPI_Recv(&buffer_simple_int , count , MPI_INT, main_loop_from, main_loop_tag, comm, MPI_STATUS_IGNORE);
             if(main_loop_from == ROOT_PROCESS ) {
                 printf("recu SEND_LAND_ORDER \n");
-                land_buffer[0] = land_id.x; land_buffer[1] = land_id.y;land_buffer[2] = land_id.size_x;land_buffer[3] = land_id.size_y;
+                land_buffer[0] = land_id.x; land_buffer[1] = land_id.y; land_buffer[2] = land_id.size_x; land_buffer[3] = land_id.size_y;
                 MPI_Send(&land_buffer[0], 4, MPI_UNSIGNED, main_loop_from, ACK, MPI_COMM_WORLD);
             }
         }
@@ -176,12 +174,10 @@ int CAN_Node_Job(int com_rank, MPI_Comm comm) {
                 init_neighbour(&temp_voisin, buffer_ui[idx], buffer_ui[idx+1], buffer_ui[idx+2],buffer_ui[idx+3], buffer_ui[idx+4]);
                 idx += 5;
                 list_add_front(&voisins, &temp_voisin);
-                print_neighbour(&temp_voisin);
                 if(main_loop_from == temp_voisin.com_rank ) {
                     continue;
                 }
                 CAN_Send_neighbour(&temp_voisin,UPDATE_NEIGBOUR, temp_voisin.com_rank, comm);
-                print_neighbour(&temp_voisin);
             }
             printf("[ %d ] voisins recu \n", com_rank);
             list_apply(&voisins, print_neighbour_cb);
@@ -191,7 +187,6 @@ int CAN_Node_Job(int com_rank, MPI_Comm comm) {
         else if(main_loop_tag == UPDATE_NEIGBOUR) {
             CAN_Receive_neighbour(&temp_voisin, main_loop_tag, main_loop_from,comm);
             printf("Je suis %d, Mes amis je suis heureux de vous annoncer que nous acceuilons à présent un nouveau voisins [%d]! \n ", com_rank, main_loop_from);
-            print_neighbour(&temp_voisin);
             update_neighbours(&voisins, &land_id ,&temp_voisin);
             temp_voisin.com_rank = main_loop_from;
             list_add_front(&voisins, &temp_voisin);

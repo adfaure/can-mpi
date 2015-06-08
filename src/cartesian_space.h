@@ -77,7 +77,6 @@ int is_neighbour_valid(const neighbour *n);
 /**
  * @brief  Vérifie si le voisin neighbour partage une frontière avec land.
  *          Cette frontière peut etre complete, partielle, incluse
- *          Retourne VOISIN_TOP|VOISIN_BOT|VOISIN_LEFT|VOISIN_RIGHT
  * @param land
  * @param n
  * @return

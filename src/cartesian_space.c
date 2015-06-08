@@ -268,7 +268,6 @@ int update_neighbours(list *l, const land*land, const neighbour *new_n) {
       list_add_front(l, &temp);
     }
   }
-  list_add_front(l, new_n);
   return 0;
 }
 
@@ -487,7 +486,7 @@ void create_svg_logs(const char* path,const int size_x, const int size_y ,const 
         text_size_y =  temp_land.y + (temp_land.size_y/2);
         fprintf(f, "<text x=\"%d\" y=\"%d\" fill=\"#%x\" >", text_size_x, text_size_y , ~(i+1) * color);
         fprintf(f, "%d", (list_lands->nb_elem - i));
-        fprintf(f, "</text> ");
+        fprintf(f, "</text>\n");
     }
 
     fprintf(f, "</svg> \n");
