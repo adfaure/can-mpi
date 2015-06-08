@@ -503,13 +503,44 @@ void test_SPLIT_LAND_UPDATE_NEIGHBOUR(void) {
 	  CU_ASSERT(is_neighbour(&l1, &temp));
   }
 
-  /*
-  printf("\n");
-  list_apply(&nghbrs1 , print_one_neighbour);
-  printf("\n");
-  list_apply(&nghbrs_out , print_one_neighbour);
-  */
-  // TODO FINIR LE TEST
+  list_clear(&nghbrs_out,do_nothing);
+  list_clear(&nghbrs1 ,do_nothing);
+  init_land(&l1, 500, 0, 500, 1000); // ((500,  250),  (250,  500))
+
+/*
+  -> 1 ((0,  250),  (0,  500))
+
+  -> 1 | [4] (250,  0),  (500)
+  -> 1 -- [3] (0,  500),  (250)
+  -> 2 ((500,  500),  (0,  500))
+  -> 2 -- [5] (750,  500),  (250)
+  -> 2 | [3] (500,  500),  (500)
+  -> 2 -- [6] (500,  500),  (250)
+  -> 2 | [4] (500,  0),  (500)
+  -> 2 | [1] (500,  0),  (500)
+  -> 3 ((0,  500),  (500,  500))
+  -> 3 -- [4] (250,  500),  (250)
+  -> 3 | [2] (500,  500),  (500)
+  -> 3 -- [1] (0,  500),  (250)
+  -> 4 ((250,  250),  (0,  500))
+  -> 4 | [2] (500,  0),  (500)
+  -> 4 -- [3] (250,  500),  (250)
+  -> 4 | [1] (250,  0),  (500)
+  -> 5 ((750,  250),  (500,  500))
+  -> 5 -- [2] (750,  500),  (250)
+  -> 5 | [6] (750,  500),  (500)
+  -> 6 ((500,  250),  (500,  500))
+  -> 6 | [5] (750,  500),  (500)
+  -> 6 -- [2] (500,  500),  (250)
+*/
+
+  init_neighbour(&n_top, 500, 0, 500 , VOISIN_V, 1); // frontière haute
+  init_neighbour(&n_le1, 500, 500, 500 , VOISIN_V, 3); // frontière haute
+
+  list_add_front(&nghbrs1, &n_top );
+  list_add_front(&nghbrs1, &n_le1 );
+  split_land_update_neighbour(&l_out, &l1, &nghbrs_out, &nghbrs1, 5, 2);
+
 }
 
 
@@ -544,6 +575,45 @@ void test_UPDATE_NEIGHBOURS(void) {
   CU_ASSERT(list_get_index(&li, 1, &n_out));
   CU_ASSERT(n_out.x == 500);
   CU_ASSERT(n_out.y == 0);
+  list_clear(&li, do_nothing);
+
+ /*
+  * Problème lors de l'iunsertion de 4
+  -> 1 ((0,  250),  (0,  500))
+  -> 1 | [4] (250,  0),  (500)
+  -> 1 -- [3] (0,  500),  (250)
+  -> 2 ((500,  500),  (0,  1000))
+  -> 2 | [3] (500,  500),  (500)
+  -> 2 | [4] (500,  0),  (500)
+  -> 2 | [1] (500,  0),  (500)
+  -> 3 ((0,  500),  (500,  500))
+  -> 3 -- [4] (250,  500),  (250)
+  -> 3 | [2] (500,  500),  (500)
+  -> 3 -- [1] (0,  500),  (250)
+  -> 4 ((250,  250),  (0,  500))
+  -> 4 | [2] (500,  0),  (500)
+  -> 4 -- [3] (250,  500),  (250)
+  -> 4 | [1] (250,  0),  (500)
+*/
+
+  init_land(&la, 500, 0, 500, 1000); // rectangle vertical
+  init_list(&li, sizeof(neighbour));
+  init_neighbour(&n, 500, 0, 500, VOISIN_V, 1); // | [42] (500,  0),  (1000)
+  list_add_front(&li, &n);
+  init_neighbour(&n, 500, 500, 500, VOISIN_V, 3); // | [42] (500,  0),  (1000)
+  list_add_front(&li, &n);
+
+  init_neighbour(&n, 500, 0, 500 ,VOISIN_V ,4);
+  update_neighbours(&li, &la, &n);
+
+  CU_ASSERT(li.nb_elem == 2);
+
+/*
+   printf("\n");
+  list_apply(&li, print_one_neighbour);
+  printf("\n");
+
+*/
 }
 
 /* The main() function for setting up and running the tests.

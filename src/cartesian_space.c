@@ -251,21 +251,15 @@ void do_really_nothing (void * n) {}
 
 int update_neighbours(list *l, const land*land, const neighbour *new_n) {
   neighbour temp;
-
   list list_cp;
   list_cp_revert(l, do_really_nothing, &list_cp);
   list_clear(l, do_really_nothing);
 
   for(int i = 0; i < list_cp.nb_elem; i++) {
     list_get_index(&list_cp,  i,  &temp);
-    if(update_border(&temp,  new_n)) {
-      if(!is_neighbour(land,  &temp)) {
-        // :((
-      } else {
-        list_add_front(l, &temp);
-      }
-    } else {
-      list_add_front(l, &temp);
+    update_border(&temp,  new_n);
+    if(is_neighbour(land,  &temp)) {
+	  list_add_front(l, &temp);
     }
   }
   list_add_front(l, new_n);
