@@ -268,6 +268,7 @@ int update_neighbours(list *l, const land*land, const neighbour *new_n) {
       list_add_front(l, &temp);
     }
   }
+  list_add_front(l, new_n);
   return 0;
 }
 

@@ -187,9 +187,8 @@ int CAN_Node_Job(int com_rank, MPI_Comm comm) {
         else if(main_loop_tag == UPDATE_NEIGBOUR) {
             CAN_Receive_neighbour(&temp_voisin, main_loop_tag, main_loop_from,comm);
             printf("Je suis %d, Mes amis je suis heureux de vous annoncer que nous acceuilons à présent un nouveau voisins [%d]! \n ", com_rank, main_loop_from);
-            update_neighbours(&voisins, &land_id ,&temp_voisin);
             temp_voisin.com_rank = main_loop_from;
-            list_add_front(&voisins, &temp_voisin);
+            update_neighbours(&voisins, &land_id ,&temp_voisin);
         }
 
         else if(main_loop_tag == RES_REQUEST_TO_JOIN) {
