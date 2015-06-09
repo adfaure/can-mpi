@@ -24,6 +24,8 @@
 #define RES_INIT_NEIGHBOUR   56
 #define UPDATE_NEIGBOUR      789
 #define ATTACH_NEW_DATA      888
+#define FETCH_DATA           999
+#define SEND_FETCH_DATA      111
 
 #define DATA_INT 0
 

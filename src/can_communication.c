@@ -129,9 +129,10 @@ int CAN_Root_Process_Job(int root_rank, MPI_Comm comm, int nb_proc) {
     }
     int data = 42;
     pair test;
+    can_data s_data;
     init_pair(&test, 550, 300);
     CAN_Attach_new_data(root_rank, 1, comm, &test, &data, DATA_INT , sizeof(int));
-
+    CAN_Fetch_data(comm, root_rank, 1,  &test, &s_data);
     CAN_Log_informations(comm, root_rank, nb_proc, "logs/end_log");
     printf("ROOT PROCESS DONE\n");
     return 1;
@@ -187,6 +188,63 @@ void CAN_REQ_Attach_new_data(MPI_Status *req_status, MPI_Comm comm , const int c
     } else {
         if(find_neighbour(voisins, &rec_pair, &neighbour_temp_find)) {
         	MPI_Send(&buffer_char[0], count, MPI_CHAR, neighbour_temp_find.com_rank, tag,  comm);
+        	printf("[ %d ] --> [ %d ] ", com_rank, neighbour_temp_find.com_rank);
+        	print_pair(&rec_pair);
+        } else {
+            printf("ERROR lors de la recherche de voisins \n");
+        }
+    }
+}
+
+void  CAN_Fetch_data(MPI_Comm comm, int com_rank, int first_rank ,const pair *pair, can_data * elem) {
+	int buffer_int[MAX_SIZE_BUFFER], count, val_ret = 0;
+	char buffer_char[MAX_SIZE_BUFFER];
+	neighbour neighbour_temp_find;
+	can_data temp_data;
+	MPI_Status status;
+
+	buffer_int[0] = com_rank;
+	buffer_int[1] = pair->x;
+	buffer_int[2] = pair->y;
+
+    MPI_Send(&buffer_int[0], 3, MPI_INT, first_rank,FETCH_DATA, comm);
+    MPI_Probe(MPI_ANY_SOURCE , SEND_FETCH_DATA, MPI_COMM_WORLD, &status);
+    MPI_Get_count(&status,MPI_CHAR ,&count);
+    MPI_Recv(&(buffer_char[0]), count, MPI_CHAR, status.MPI_SOURCE, status.MPI_TAG, comm, &status);
+
+    memcpy(&buffer_int[0], &buffer_char[0], sizeof(unsigned int)); // data size
+    memcpy(&buffer_int[1], &buffer_char[1 * sizeof(unsigned int)], sizeof(unsigned int)); // data type
+    init_data(elem, buffer_int[0], buffer_int[1], &buffer_char[2 *  sizeof(unsigned int)]);
+}
+
+void CAN_REQ_Fetch_data(MPI_Status *req_status ,MPI_Comm comm,int com_rank ,const land *land_id, const list * voisins) {
+	int buffer_int[MAX_SIZE_BUFFER], count, useless = 42;
+	char buffer_char[MAX_SIZE_BUFFER];
+	int from = req_status->MPI_SOURCE, tag = req_status->MPI_TAG;
+	pair rec_pair;
+	neighbour neighbour_temp_find;
+	can_data temp_data;
+    MPI_Get_count (req_status, MPI_INT, &count);
+    MPI_Recv(&buffer_int[0] ,count, MPI_INT, from, tag, comm, req_status);
+    init_pair(&rec_pair, buffer_int[1], buffer_int[2]);
+    if(is_land_contains_pair(land_id, &rec_pair)) {
+    	printf("[ %d ] j'ai la donnée ;) :  %d \n", com_rank, buffer_int[0]);
+    	can_data moc;
+    	int total_size = 0;
+    	init_data(&moc, sizeof(int), DATA_INT, &useless);
+
+    	memcpy(&buffer_char[0]                         , &(moc.element_size), (sizeof(unsigned int))); // data size
+        memcpy(&buffer_char[1 * sizeof(unsigned int)  ], &(moc.data_type)   , (sizeof(unsigned int))); // data type
+        memcpy(&buffer_char[2 * sizeof(unsigned int)  ], moc.data, moc.element_size);                  // element itself
+
+        total_size = (2 * sizeof(unsigned int)) + moc.element_size;
+
+        MPI_Send(&(buffer_char[0]), total_size,  MPI_CHAR,  buffer_int[0],  SEND_FETCH_DATA,  comm);
+        free_can_data_(&moc);
+        return;
+    } else {
+        if(find_neighbour(voisins, &rec_pair, &neighbour_temp_find)) {
+        	MPI_Send(&buffer_int[0], count, MPI_INT, neighbour_temp_find.com_rank, tag,  comm);
         	printf("[ %d ] --> [ %d ] ", com_rank, neighbour_temp_find.com_rank);
         	print_pair(&rec_pair);
         } else {
@@ -390,10 +448,15 @@ int CAN_Node_Job(int com_rank, MPI_Comm comm) {
         	CAN_REQ_Request_init_split(&main_loop_status , comm, com_rank , &voisins, &land_id, &wait_for);
         }
 
-
         else if(main_loop_tag == ATTACH_NEW_DATA) {
         	// traitement
         	CAN_REQ_Attach_new_data(&main_loop_status , comm, com_rank ,&land_id, &voisins);
+        }
+
+        else if(main_loop_tag == FETCH_DATA) {
+        	// traitement
+        	//void CAN_REQ_Fetch_data(MPI_Status req_status ,MPI_Comm comm,int com_rank ,const land *land_id, const list * voisins) {
+        	CAN_REQ_Fetch_data(&main_loop_status , comm, com_rank ,&land_id, &voisins);
         }
 
         else   {
