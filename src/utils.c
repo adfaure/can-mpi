@@ -184,9 +184,9 @@ int land_storage_fetch_data(const land_storage *ls, unsigned int x, unsigned int
 	return 1;
 }
 
-void init_data(can_data *data, unsigned int data_size, unsigned int data_type, void *elem) {
+void init_data(can_data *data, unsigned int data_size, unsigned int data_type,const void *elem) {
 	data->data_type = data_type;
-	data->data_type = data_size;
+	data->element_size = data_size;
 	data->data = malloc(data_size);
 	memcpy(data->data, elem, data_size);
 }
