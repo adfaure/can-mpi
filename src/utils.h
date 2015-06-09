@@ -9,41 +9,9 @@
 #include <string.h>
 #include <math.h>
 
-// world size
-#define SIZE_X 1000
-#define SIZE_Y 1000
-
-//root process
-#define ROOT_PROCESS 0
-
 // max sizes
 #define MAX_SIZE_BUFFER 100
 #define MAX_SIZE_NEIGHBOUR 100
-
-// Communication tags
-#define ROOT_TAG_INIT_NODE   0
-#define GET_ENTRY_POINT      4
-#define SEND_LAND_ORDER      65
-#define ACK                  78
-#define SEND_ENTRY_POINT     5
-#define RES_REQUEST_TO_JOIN  12
-#define SEND_NEIGBOUR_ORDER  34
-#define LOCALIZE_RESP        13
-#define IDL                  32
-#define ACK_TAG_BOOTSTRAP    42
-#define REQUEST_INIT_SPLIT   64
-#define NEGOCIATE_LAND       123
-#define REQUEST_RECEIVE_LAND 234
-#define LOCALIZE             321
-#define REQUEST_TO_JOIN      666
-#define RES_INIT_NEIGHBOUR   56
-#define UPDATE_NEIGBOUR      789
-#define ATTACH_NEW_DATA      888
-
-//LOG define
-#define LAND_LOG      0
-#define NEIGHBOUR_LOG 1
-#define SVG_FORMAT    2
 
 // voisin variables
 #define VOISIN_V           1 //vertical
@@ -57,6 +25,12 @@
 #define VOISIN_TOP_RIGHT   9
 #define VOISIN_TOP_LEFT    10
 #define VOISIN_NONE        0
+
+
+//LOG define
+#define LAND_LOG      0
+#define NEIGHBOUR_LOG 1
+#define SVG_FORMAT    2
 
 #define max(a,b) \
    ({ __typeof__ (a) _a = (a); \
@@ -80,22 +54,48 @@ typedef struct _list {
   cell *first;
 } list;
 
+typedef struct _data {
+	void *data;
+	unsigned int element_size, data_type;
+} can_data;
+
 typedef struct _land_storage {
 	unsigned int element_size, size_x, size_y;
-	void *** data;
+	can_data ***data;
 } land_storage;
+
 
 /**
  *
  */
-void init_land_storage(land_storage *ls, unsigned int size_x,unsigned int size_y, unsigned int element_size);
+void init_data(can_data *data, unsigned int data_size, unsigned int data_type, void *elem);
+
+/**
+ *
+ */
+void free_can_data_(can_data *data);
+
+/**
+ *
+ */
+void can_data_get_element(const can_data *c_data, void *elem);
+
+/**
+ *
+ */
+void init_land_storage(land_storage *ls, unsigned int size_x,unsigned int size_y);
+
+/**
+ *
+ */
+void print_data(const can_data *data);
 
 
 /**
  * store a data to the specified position
  * Return true if everything is ok
  */
-int land_storage_store_value(land_storage *ls, unsigned int x, unsigned int y,const void* data);
+int land_storage_store_value(land_storage *ls, unsigned int x, unsigned int y,const can_data* data);
 
 
 /**

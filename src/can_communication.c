@@ -130,11 +130,69 @@ int CAN_Root_Process_Job(int root_rank, MPI_Comm comm, int nb_proc) {
     int data = 42;
     pair test;
     init_pair(&test, 550, 300);
-    CAN_Attach_new_data(root_rank, 1, comm, &test, &data, sizeof(int));
+    CAN_Attach_new_data(root_rank, 1, comm, &test, &data, DATA_INT , sizeof(int));
 
-    CAN_Log_informations(comm,root_rank, nb_proc, "logs/end_log");
+    CAN_Log_informations(comm, root_rank, nb_proc, "logs/end_log");
     printf("ROOT PROCESS DONE\n");
     return 1;
+}
+
+
+
+void CAN_Attach_new_data(int self_rank, int first_node, MPI_Comm comm, pair *_pair, void *data,int data_type, unsigned int data_size) {
+    MPI_Status status;
+    unsigned int total_size = 0;
+    char *buffer = (char*) malloc((sizeof(int) * 4) + (sizeof(char) * data_size )), res;
+    memcpy(&buffer[0]                       , &(self_rank) , (sizeof(unsigned int))); //from
+    memcpy(&buffer[1 * sizeof(unsigned int)], &(_pair->x)  , (sizeof(unsigned int))); // x
+    memcpy(&buffer[2 * sizeof(unsigned int)], &(_pair->y)  , (sizeof(unsigned int))); // y
+    memcpy(&buffer[3 * sizeof(unsigned int)], &(data_size) , (sizeof(unsigned int))); // data size
+    memcpy(&buffer[4 * sizeof(unsigned int)], &(data_type) , (sizeof(unsigned int))); // data type
+
+    total_size = (5 * (sizeof(unsigned int))) + data_size;
+    memcpy(&(buffer[5 * (sizeof(unsigned int))]), data, data_size);
+
+    MPI_Send(&(buffer[0]), total_size,  MPI_CHAR,  first_node,  ATTACH_NEW_DATA,  comm);
+    MPI_Recv(&res, 1,  MPI_INT,  MPI_ANY_SOURCE,  ACK,  comm,  &status);
+    free(buffer);
+}
+
+
+void CAN_REQ_Attach_new_data(MPI_Status *req_status, MPI_Comm comm , const int com_rank ,const land *land_id, const  list *voisins) {
+	int buffer_int[MAX_SIZE_BUFFER], count, useless = 0;
+	char buffer_char[MAX_SIZE_BUFFER];
+	int from = req_status->MPI_SOURCE, tag = req_status->MPI_TAG;
+	pair rec_pair;
+	neighbour neighbour_temp_find;
+	void * data;
+	can_data temp_data;
+    MPI_Get_count (req_status, MPI_CHAR, &count);
+    MPI_Recv(&buffer_char[0] ,count, MPI_CHAR, from, tag, comm, req_status);
+
+    memcpy(&buffer_int[0], &buffer_char[0],                        sizeof(unsigned int)); // from
+    memcpy(&buffer_int[1], &buffer_char[1 * sizeof(unsigned int)], sizeof(unsigned int)); // x
+    memcpy(&buffer_int[2], &buffer_char[2 * sizeof(unsigned int)], sizeof(unsigned int)); // y
+    memcpy(&buffer_int[3], &buffer_char[3 * sizeof(unsigned int)], sizeof(unsigned int)); // data size
+    memcpy(&buffer_int[4], &buffer_char[4 * sizeof(unsigned int)], sizeof(unsigned int)); // data type
+
+    init_pair(&rec_pair, buffer_int[1], buffer_int[2]);
+    if(is_land_contains_pair(land_id, &rec_pair)) {
+    	printf("data size : %d \n" ,buffer_int[3]);
+    	data = malloc(sizeof(buffer_int[3]));
+    	init_data(&temp_data, buffer_int[3],  buffer_int[4], &buffer_char[5* sizeof(unsigned int)]);
+    	printf("[ %d ] i'll store it, no worries :  %d \n", com_rank, *((int*)&buffer_char[5* sizeof(unsigned int)]));
+    	MPI_Send(&useless, 1, MPI_INT, buffer_int[0], ACK, comm);
+    	free(data);
+        return;
+    } else {
+        if(find_neighbour(voisins, &rec_pair, &neighbour_temp_find)) {
+        	MPI_Send(&buffer_char[0], count, MPI_CHAR, neighbour_temp_find.com_rank, tag,  comm);
+        	printf("[ %d ] --> [ %d ] ", com_rank, neighbour_temp_find.com_rank);
+        	print_pair(&rec_pair);
+        } else {
+            printf("ERROR lors de la recherche de voisins \n");
+        }
+    }
 }
 
 int CAN_REQ_Root_init(MPI_Status *req_status, MPI_Comm comm, int com_rank, land *land_id) {
@@ -273,63 +331,6 @@ void CAN_REQ_Request_init_split(MPI_Status *req_status,const MPI_Comm comm,const
     (*wait_for) = MPI_ANY_SOURCE;
 }
 
-void CAN_REQ_Attach_new_data(MPI_Status *req_status, MPI_Comm comm , const int com_rank ,const land *land_id, const  list *voisins) {
-	int buffer_int[MAX_SIZE_BUFFER], count, useless = 0;
-	char buffer_char[MAX_SIZE_BUFFER];
-	int from = req_status->MPI_SOURCE, tag = req_status->MPI_TAG;
-	pair rec_pair;
-	neighbour neighbour_temp_find;
-	void * data = NULL;
-    MPI_Get_count (req_status, MPI_CHAR, &count);
-    MPI_Recv(&buffer_char[0] ,count, MPI_CHAR, from, tag, comm, req_status);
-    memcpy(&buffer_int[0], &buffer_char[0],                        sizeof(unsigned int));
-    memcpy(&buffer_int[1], &buffer_char[sizeof(unsigned int)],     sizeof(unsigned int));
-    memcpy(&buffer_int[2], &buffer_char[2 * sizeof(unsigned int)], sizeof(unsigned int));
-    memcpy(&buffer_int[3], &buffer_char[3 * sizeof(unsigned int)], sizeof(unsigned int));
-
-    init_pair(&rec_pair, buffer_int[1], buffer_int[2]);
-    if(is_land_contains_pair(land_id, &rec_pair)) {
-    	printf("data size : %d \n" ,buffer_int[3]);
-    	data = malloc(sizeof(buffer_int[3]));
-    	memcpy(data, &(buffer_char[4 * sizeof(unsigned int)]), buffer_int[3]);
-    	printf("[ %d ] i'll store it, no worries :  %d \n", com_rank, *((int*)data));
-    	MPI_Send(&useless, 1, MPI_INT, buffer_int[0], ACK, comm);
-    	free(data);
-        return;
-    } else {
-        if(find_neighbour(voisins, &rec_pair, &neighbour_temp_find)) {
-        	MPI_Send(&buffer_char[0], count, MPI_CHAR, neighbour_temp_find.com_rank, tag,  comm);
-        	printf("[ %d ] --> [ %d ] ", com_rank, neighbour_temp_find.com_rank);
-        	print_pair(&rec_pair);
-        } else {
-            printf("ERROR lors de la recherche de voisins \n");
-        }
-    }
-}
-
-
-void CAN_Attach_new_data(int self_rank, int first_node, MPI_Comm comm, pair *_pair, void *data, unsigned int data_size) {
-    MPI_Status status;
-    unsigned int total_size = 0;
-    char *buffer = (char*) malloc((sizeof(int) * 3) + (sizeof(char) * data_size )), res;
-    memcpy((&buffer[0]), &(self_rank) , (sizeof(unsigned int)));
-    memcpy(&buffer[sizeof(unsigned int)], &(_pair->x) , (sizeof(unsigned int)));
-    memcpy(&buffer[2 * sizeof(unsigned int)], &(_pair->y) , (sizeof(unsigned int)));
-    memcpy(&buffer[3 * sizeof(unsigned int)], &(data_size) , (sizeof(unsigned int)));
-
-    total_size = (4 * (sizeof(unsigned int))) + data_size;
-    memcpy(&(buffer[4 * (sizeof(unsigned int))]), data, data_size);
-
-    MPI_Send(&(buffer[0]), total_size,  MPI_CHAR,  first_node,  ATTACH_NEW_DATA,  comm);
-    MPI_Recv(&res, 1,  MPI_INT,  MPI_ANY_SOURCE,  ACK,  comm,  &status);
-    free(buffer);
-}
-
-void CAN_Decode_trafic_Data() {
-
-}
-
-
 int CAN_Node_Job(int com_rank, MPI_Comm comm) {
     int wait_for = -1;
     unsigned int main_loop_from;
@@ -391,7 +392,7 @@ int CAN_Node_Job(int com_rank, MPI_Comm comm) {
 
 
         else if(main_loop_tag == ATTACH_NEW_DATA) {
-
+        	// traitement
         	CAN_REQ_Attach_new_data(&main_loop_status , comm, com_rank ,&land_id, &voisins);
         }
 

@@ -151,36 +151,57 @@ void list_clear(list *l, void(*free_function)(void *data)) {
     l->nb_elem = 0;
 }
 
-void init_land_storage(land_storage *ls, unsigned int size_x,unsigned int size_y, unsigned int element_size) {
+void init_land_storage(land_storage *ls, unsigned int size_x,unsigned int size_y) {
 	ls->size_x = size_x;
 	ls->size_y = size_y;
-	ls->element_size = element_size;
-	ls->data = malloc(sizeof(void *) * size_x);
+	ls->data = malloc(sizeof(can_data*) * size_x);
 	for(unsigned int i = 0; i < size_x; i++) {
 		ls->data[i] = NULL;
 	}
 }
 
-int land_storage_store_value(land_storage *ls, unsigned int x, unsigned int y,const void* data) {
+int land_storage_store_value(land_storage *ls, unsigned int x, unsigned int y,const can_data* data) {
 	if(x >= ls->size_x || y >= ls->size_y) return 0;
 
 	if(ls->data[x] == NULL) {
-		ls->data[x] = malloc(sizeof(void*) * ls->size_y);
+		ls->data[x] = malloc(sizeof(can_data*) * ls->size_y);
 		for(unsigned int  i = 0 ; i < ls->size_y; i++) {
 			ls->data[x][i] = NULL;
 		}
 	}
 
-	ls->data[x][y] = malloc(sizeof(ls->element_size));
-	memcpy(ls->data[x][y], data, ls->element_size);
+	ls->data[x][y] = malloc(sizeof(can_data));
+	memcpy(ls->data[x][y], data, sizeof(can_data));
 	return 1;
 }
 
-int land_storage_fetch_value(const land_storage *ls, unsigned int x, unsigned int y, void* data) {
+int land_storage_fetch_data(const land_storage *ls, unsigned int x, unsigned int y, can_data *data) {
 	if(ls->data[x] == NULL || ls->data[x][y] == NULL) {
 		fprintf(stderr, "data does not exist yet \n");
 		return 0;
 	}
-	memcpy(data, ls->data[x][y] , ls->element_size);
+	memcpy(data, ls->data[x][y], sizeof(can_data));
 	return 1;
+}
+
+void init_data(can_data *data, unsigned int data_size, unsigned int data_type, void *elem) {
+	data->data_type = data_type;
+	data->data_type = data_size;
+	data->data = malloc(data_size);
+	memcpy(data->data, elem, data_size);
+}
+
+void free_can_data_(can_data *data) {
+	data->data_type = 0;
+	data->element_size = 0;
+	free(data->data);
+}
+
+void can_data_get_element(const can_data *c_data, void *elem) {
+	memcpy(elem, c_data->data, c_data->element_size);
+}
+
+void print_data(const can_data *data) {
+	printf(" data -> type : %d , size : %d , ptr value : %p",
+			data->data_type, data->element_size, data->data);
 }
