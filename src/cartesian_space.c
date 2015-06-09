@@ -467,10 +467,10 @@ void create_svg_logs(const char* path,const int size_x, const int size_y ,const 
     if(!f) {
         fprintf(stderr, "erreur lors de l'ouverture du fichier : %s", path);
     }
-
+    unsigned int color_max = 16777215;
     land temp_land;
     int text_size_x, text_size_y;
-    unsigned long color =  pow(16, 6) / list_lands->nb_elem;
+    unsigned long color =  color_max / list_lands->nb_elem;
     fprintf(f, "<?xml version=\"1.0\" encoding=\"utf-8\"?> \n");
     fprintf(f, "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\"%d\" height=\"%d\"> \n", size_x, size_y);
 
@@ -483,7 +483,7 @@ void create_svg_logs(const char* path,const int size_x, const int size_y ,const 
         list_get_index(list_lands, i, &temp_land);
         text_size_x =  temp_land.x + (temp_land.size_x/2) ;
         text_size_y =  temp_land.y + (temp_land.size_y/2);
-        fprintf(f, "<text x=\"%d\" y=\"%d\" fill=\"#%x\" >", text_size_x, text_size_y , ~(i+1) * color);
+        fprintf(f, "<text style=\" font-size  : 24; font-weight: bold;\" x=\"%d\" y=\"%d\" fill=\"#%x\"  font-weight=\"900\" >", text_size_x, text_size_y , ~((i + 1) * color ));
         fprintf(f, "%d", (list_lands->nb_elem - i));
         fprintf(f, "</text>\n");
     }

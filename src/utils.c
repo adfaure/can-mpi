@@ -150,3 +150,35 @@ void list_clear(list *l, void(*free_function)(void *data)) {
     l->first = NULL;
     l->nb_elem = 0;
 }
+
+void init_land_storage(land_storage *ls, unsigned int size_x,unsigned int size_y, unsigned int element_size) {
+	ls->size_x = size_x;
+	ls->size_y = size_y;
+	ls->element_size = element_size;
+	ls->data = malloc(sizeof(void *) * size_x);
+	for(unsigned int i = 0; i < size_x; i++) {
+		ls->data[i] = NULL;
+	}
+}
+
+int land_storage_store_value(land_storage *ls, unsigned int x, unsigned int y,const void* data) {
+	if(ls->data[x] == NULL) {
+		ls->data[x] = malloc(sizeof(void*) * ls->size_y);
+		for(unsigned int  i = 0 ; i < ls->size_y; i++) {
+			ls->data[x][i] = NULL;
+		}
+	}
+
+	ls->data[x][y] = malloc(sizeof(ls->element_size));
+	memcpy(ls->data[x][y], data, ls->element_size);
+	return 1;
+}
+
+int land_storage_fetch_value(const land_storage *ls, unsigned int x, unsigned int y, void* data) {
+	if(ls->data[x] == NULL || ls->data[x][y] == NULL) {
+		fprintf(stderr, "data does not exist yet \n");
+		return 0;
+	}
+	memcpy(data, ls->data[x][y] , ls->element_size);
+	return 1;
+}

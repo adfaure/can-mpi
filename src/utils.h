@@ -38,6 +38,7 @@
 #define REQUEST_TO_JOIN      666
 #define RES_INIT_NEIGHBOUR   56
 #define UPDATE_NEIGBOUR      789
+#define ATTACH_NEW_DATA      888
 
 //LOG define
 #define LAND_LOG      0
@@ -78,6 +79,30 @@ typedef struct _list {
   size_t element_size;
   cell *first;
 } list;
+
+typedef struct _land_storage {
+	unsigned int element_size, size_x, size_y;
+	void *** data;
+} land_storage;
+
+/**
+ *
+ */
+void init_land_storage(land_storage *ls, unsigned int size_x,unsigned int size_y, unsigned int element_size);
+
+
+/**
+ * store a data to the specified position
+ * Return true if everything is ok
+ */
+int land_storage_store_value(land_storage *ls, unsigned int x, unsigned int y,const void* data);
+
+
+/**
+ * Fetch a value to the spécified position
+ */
+int land_storage_fetch_value(const land_storage *ls, unsigned int x, unsigned int y, void* data);
+
 
 /**
  * initialise une liste simplement chainée
