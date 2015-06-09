@@ -274,33 +274,33 @@ void CAN_REQ_Request_init_split(MPI_Status *req_status,const MPI_Comm comm,const
 }
 
 void CAN_REQ_Attach_new_data(MPI_Status *req_status, MPI_Comm comm , const int com_rank ,const land *land_id, const  list *voisins) {
-	int buffer_int[MAX_SIZE_BUFFER], count;
+	int buffer_int[MAX_SIZE_BUFFER], count, useless = 0;
 	char buffer_char[MAX_SIZE_BUFFER];
 	int from = req_status->MPI_SOURCE, tag = req_status->MPI_TAG;
 	pair rec_pair;
 	neighbour neighbour_temp_find;
 	void * data = NULL;
     MPI_Get_count (req_status, MPI_CHAR, &count);
-    printf("[ %d ] recu %d data \n", com_rank ,count);
     MPI_Recv(&buffer_char[0] ,count, MPI_CHAR, from, tag, comm, req_status);
     memcpy(&buffer_int[0], &buffer_char[0],                        sizeof(unsigned int));
     memcpy(&buffer_int[1], &buffer_char[sizeof(unsigned int)],     sizeof(unsigned int));
     memcpy(&buffer_int[2], &buffer_char[2 * sizeof(unsigned int)], sizeof(unsigned int));
     memcpy(&buffer_int[3], &buffer_char[3 * sizeof(unsigned int)], sizeof(unsigned int));
-    printf("size %d %d \n", buffer_int[1], sizeof(unsigned int));
+
     init_pair(&rec_pair, buffer_int[1], buffer_int[2]);
     if(is_land_contains_pair(land_id, &rec_pair)) {
+    	printf("data size : %d \n" ,buffer_int[3]);
     	data = malloc(sizeof(buffer_int[3]));
     	memcpy(data, &(buffer_char[4 * sizeof(unsigned int)]), buffer_int[3]);
-    	printf("[ %d ] iv got your data ! %d \n", com_rank, *((unsigned int*)data));
+    	printf("[ %d ] i'll store it, no worries :  %d \n", com_rank, *((int*)data));
+    	MPI_Send(&useless, 1, MPI_INT, buffer_int[0], ACK, comm);
     	free(data);
         return;
     } else {
         if(find_neighbour(voisins, &rec_pair, &neighbour_temp_find)) {
-        //	printf("[ %d ] node %d sherching for paire \n");
-            MPI_Send(&buffer_int[0], count, MPI_CHAR, neighbour_temp_find.com_rank, tag,  comm);
-        //	printf("[ %d ] --> [ %d ] ", com_rank, neighbour_temp_find.com_rank);
-        //   print_pair(&rec_pair);
+        	MPI_Send(&buffer_char[0], count, MPI_CHAR, neighbour_temp_find.com_rank, tag,  comm);
+        	printf("[ %d ] --> [ %d ] ", com_rank, neighbour_temp_find.com_rank);
+        	print_pair(&rec_pair);
         } else {
             printf("ERROR lors de la recherche de voisins \n");
         }
@@ -312,17 +312,16 @@ void CAN_Attach_new_data(int self_rank, int first_node, MPI_Comm comm, pair *_pa
     MPI_Status status;
     unsigned int total_size = 0;
     char *buffer = (char*) malloc((sizeof(int) * 3) + (sizeof(char) * data_size )), res;
-    buffer[0] = self_rank; // emetteur
-    memcpy(buffer, &(_pair->x) , (sizeof(unsigned int)));
+    memcpy((&buffer[0]), &(self_rank) , (sizeof(unsigned int)));
+    memcpy(&buffer[sizeof(unsigned int)], &(_pair->x) , (sizeof(unsigned int)));
+    memcpy(&buffer[2 * sizeof(unsigned int)], &(_pair->y) , (sizeof(unsigned int)));
+    memcpy(&buffer[3 * sizeof(unsigned int)], &(data_size) , (sizeof(unsigned int)));
 
-    buffer[2 * (sizeof(unsigned int))] = _pair->y; // y
-    buffer[3 * (sizeof(unsigned int))] = data_size; // y
     total_size = (4 * (sizeof(unsigned int))) + data_size;
     memcpy(&(buffer[4 * (sizeof(unsigned int))]), data, data_size);
 
-    printf("%d, %d, %u, %u \n",  *((int *) &buffer[0]) , _pair->x,  buffer[2] ,   buffer[3]);
     MPI_Send(&(buffer[0]), total_size,  MPI_CHAR,  first_node,  ATTACH_NEW_DATA,  comm);
-    MPI_Recv(&res, 1,  MPI_UNSIGNED,  MPI_ANY_SOURCE,  ACK,  comm,  &status);
+    MPI_Recv(&res, 1,  MPI_INT,  MPI_ANY_SOURCE,  ACK,  comm,  &status);
     free(buffer);
 }
 
