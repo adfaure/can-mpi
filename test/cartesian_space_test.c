@@ -61,6 +61,8 @@ void test_IS_LAND_CONTAINS(void) {
   CU_ASSERT(! is_land_contains(&l, 0, 500));
   CU_ASSERT(is_land_contains(&l, 499, 0));
   CU_ASSERT(! is_land_contains(&l, 500, 0));
+  init_land(&l, 500, 500, 500, 500);
+  CU_ASSERT(is_land_contains(&l, 598, 532));
 }
 
 void test_IS_LAND_CONTAINS_PAIR(void) {

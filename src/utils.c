@@ -162,6 +162,8 @@ void init_land_storage(land_storage *ls, unsigned int size_x,unsigned int size_y
 }
 
 int land_storage_store_value(land_storage *ls, unsigned int x, unsigned int y,const void* data) {
+	if(x >= ls->size_x || y >= ls->size_y) return 0;
+
 	if(ls->data[x] == NULL) {
 		ls->data[x] = malloc(sizeof(void*) * ls->size_y);
 		for(unsigned int  i = 0 ; i < ls->size_y; i++) {
