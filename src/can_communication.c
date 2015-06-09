@@ -122,8 +122,8 @@ int CAN_Root_Process_Job(int root_rank, MPI_Comm comm, int nb_proc) {
                 main_loop_buffer_int[0] = 1;
                 MPI_Send(&main_loop_buffer_int[0] ,1 , MPI_INT, i, SEND_ENTRY_POINT, comm);
                 MPI_Recv(&main_loop_buffer_int[0] ,1 , MPI_INT, i, ACK, comm, &main_loop_status);
-                sprintf(name, "%s_%d", base_path, i);
-                CAN_Log_informations(comm,root_rank, nb_proc, name);
+                sprintf((char *)name, "%s_%d", base_path, i);
+                CAN_Log_informations(comm,root_rank, nb_proc, (char *)name);
             }
         }
     }
@@ -196,7 +196,7 @@ void CAN_REQ_Attach_new_data(MPI_Status *req_status, MPI_Comm comm , const int c
 }
 
 int CAN_REQ_Root_init(MPI_Status *req_status, MPI_Comm comm, int com_rank, land *land_id) {
-	int count,send_int_buffer[MAX_SIZE_BUFFER] ,rec_buffer_int[MAX_SIZE_BUFFER], req_src;
+	int count,send_int_buffer[MAX_SIZE_BUFFER] ,rec_buffer_int[MAX_SIZE_BUFFER];
 	pair pair_id;
 
     get_random_id(&pair_id, SIZE_X, SIZE_Y);
@@ -230,7 +230,7 @@ void CAN_REQ_Rec_Neighbours(MPI_Status *req_status, MPI_Comm comm, int com_rank,
         init_neighbour(&temp_voisin, buffer_ui[idx], buffer_ui[idx+1], buffer_ui[idx+2],buffer_ui[idx+3], buffer_ui[idx+4]);
         idx += 5;
         list_add_front(voisins, &temp_voisin);
-        if(req_status->MPI_SOURCE == temp_voisin.com_rank ) {
+        if((unsigned int)req_status->MPI_SOURCE == temp_voisin.com_rank ) {
             continue;
         }
         CAN_Send_neighbour(&temp_voisin,UPDATE_NEIGBOUR, temp_voisin.com_rank, comm);
@@ -313,7 +313,7 @@ void CAN_REQ_Send_Neighbour_order(MPI_Status *req_status,const MPI_Comm comm, co
 	MPI_Send((&buffer_ui[0]), voisins->nb_elem * (sizeof(neighbour)/sizeof(unsigned int)), MPI_UNSIGNED, req_status->MPI_SOURCE, ACK, comm);
 }
 
-void CAN_REQ_Request_init_split(MPI_Status *req_status,const MPI_Comm comm,const int com_rank ,const list *voisins, land *land_id, int *wait_for) {
+void CAN_REQ_Request_init_split(MPI_Status *req_status, const MPI_Comm comm, const int com_rank, list *voisins, land *land_id, int *wait_for) {
 	int count, main_loop_buffer_int;
 	MPI_Status status;
 	land new_land;

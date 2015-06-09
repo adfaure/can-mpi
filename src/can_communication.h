@@ -56,5 +56,10 @@ int CAN_Root_Process_Job(int root_rank, MPI_Comm comm,int nb_proc);
  */
 int CAN_Node_Job(int com_rank, MPI_Comm comm);
 
+/**
+ *
+ */
+void CAN_Attach_new_data(int self_rank, int first_node, MPI_Comm comm, pair *_pair, void *data, int data_type, unsigned int data_size);
+
 
 #endif

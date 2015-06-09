@@ -476,14 +476,14 @@ void create_svg_logs(const char* path,const int size_x, const int size_y ,const 
 
     for(int i = 0 ; i < list_lands->nb_elem; i++) {
         list_get_index(list_lands, i, &temp_land);
-        fprintf(f, " <rect width=\"%u\" height=\"%u\" x=\"%u\" y=\"%u\" fill=\"#%X\" /> \n", temp_land.size_x, temp_land.size_y, temp_land.x, temp_land.y, (i + 1) * color );
+        fprintf(f, " <rect width=\"%u\" height=\"%u\" x=\"%u\" y=\"%u\" fill=\"#%X\" /> \n", temp_land.size_x, temp_land.size_y, temp_land.x, temp_land.y, (unsigned int)((i + 1) * color));
     }
 
     for(int i = 0 ; i < list_lands->nb_elem; i++) {
         list_get_index(list_lands, i, &temp_land);
         text_size_x =  temp_land.x + (temp_land.size_x/2) ;
         text_size_y =  temp_land.y + (temp_land.size_y/2);
-        fprintf(f, "<text style=\" font-size  : 24; font-weight: bold;\" x=\"%d\" y=\"%d\" fill=\"#%x\"  font-weight=\"900\" >", text_size_x, text_size_y , ~((i + 1) * color ));
+        fprintf(f, "<text style=\" font-size  : 24; font-weight: bold;\" x=\"%d\" y=\"%d\" fill=\"#%x\"  font-weight=\"900\" >", text_size_x, text_size_y , (unsigned int)~((i + 1) * color ));
         fprintf(f, "%d", (list_lands->nb_elem - i));
         fprintf(f, "</text>\n");
     }
