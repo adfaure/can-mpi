@@ -35,45 +35,38 @@ void CAN_Recv_localise_timeout(int *loc, const pair *_pair,  int self_rank,  int
 }
 
 
-int CAN_Root_Process_Job(int root_rank, MPI_Comm comm, int nb_proc) {
-
+void CAN_Log_informations(MPI_Comm comm,const int root_rank, const int nb_proc, const char *base_path) {
     MPI_Status main_loop_status;
     unsigned int land_buffer[4] , buffer_ui[MAX_SIZE_BUFFER], buffer_simple_int = 0;
-    int main_loop_tag, count, main_loop_buffer_int[MAX_SIZE_BUFFER]; // wait_array on attend un message d'une source avec un tag
+    int count; // wait_array on attend un message d'une source avec un tag
     land temp_land;
-    list voisins, temp_voisins, lands;
-    FILE *file;
+    list  temp_voisins, lands;
     neighbour temp_voisin;
+    FILE * file;
 
-    file = fopen ("log.txt", "w+");
+    const char svg[4] = ".svg";
+    const char txt[4] = ".txt";
+    int size = strlen(base_path);
+	printf("base path de size %d ", size);
+	char *txt_file      = malloc((size * sizeof(char)) + ( 4 * sizeof(char)) + 1);
+	char *svg_name_file = malloc((size * sizeof(char)) + ( 4 * sizeof(char)) + 1);
+	txt_file[size] = '\n';
+	svg_name_file[size] = '\n';
+
+	strcpy(txt_file, base_path);
+	strcat(txt_file, txt);
+
+	strcpy(svg_name_file, base_path);
+	strcat(svg_name_file, svg);
+
+    file = fopen (txt_file, "w+");
     if(!file) {
         printf(" erreur lors de l'ouverture du fichier de log \n");
-        return 0;
+        return;
     }
-    init_list(&voisins, sizeof(neighbour));
+
     init_list(&temp_voisins, sizeof(neighbour));
     init_list(&lands, sizeof(land));
-
-    for(int i = 0; i < nb_proc; i++) {
-        if(i != root_rank) {
-            MPI_Send(&i, 1, MPI_INT, i, ROOT_TAG_INIT_NODE, comm);
-            MPI_Recv(&main_loop_buffer_int[0] ,1 , MPI_INT, i, MPI_ANY_TAG, comm, &main_loop_status);
-            main_loop_tag  = main_loop_status.MPI_TAG;
-            if(main_loop_tag == ACK_TAG_BOOTSTRAP) {
-                printf("bootstraping node did it well \n");
-            } else if(main_loop_tag == GET_ENTRY_POINT) {
-                main_loop_buffer_int[0] = 1;
-                MPI_Send(&main_loop_buffer_int[0] ,1 , MPI_INT, i, SEND_ENTRY_POINT, comm);
-                MPI_Recv(&main_loop_buffer_int[0] ,1 , MPI_INT, i, ACK, comm, &main_loop_status);
-            }
-        }
-    }
-
-    int dummy = 0;
-    for(int j = 0; j < 10000000; ++j) {
-        dummy = j * j;
-    }
-    dummy++;
 
     for(int i = 0; i < nb_proc; i++) {
         if(i != root_rank) {
@@ -90,14 +83,56 @@ int CAN_Root_Process_Job(int root_rank, MPI_Comm comm, int nb_proc) {
             int idx = 0;
             for(int j = 0; j < nb_voisins; j++) {
                 init_neighbour(&temp_voisin, buffer_ui[idx], buffer_ui[idx+1], buffer_ui[idx+2],buffer_ui[idx+3], buffer_ui[idx+4]);
-                list_add_front(&voisins, &temp_voisin);
+                list_add_front(&temp_voisins, &temp_voisin);
                 log_factory(file, &temp_voisin, NEIGHBOUR_LOG, i);
                 idx += 5;
             }
         }
     }
-    create_svg_logs("world.svg",SIZE_X, SIZE_Y ,&lands);
+    create_svg_logs(svg_name_file , SIZE_X, SIZE_Y ,&lands);
+    list_clear(&temp_voisins, free_neighbour_cb);
+    list_clear(&lands,  free_land_cb);
+    free(svg_name_file);
+    free(txt_file);
     fclose(file);
+}
+
+
+int CAN_Root_Process_Job(int root_rank, MPI_Comm comm, int nb_proc) {
+
+    MPI_Status main_loop_status;
+    unsigned int land_buffer[4] , buffer_ui[MAX_SIZE_BUFFER], buffer_simple_int = 0;
+    int main_loop_tag, count, main_loop_buffer_int[MAX_SIZE_BUFFER]; // wait_array on attend un message d'une source avec un tag
+    land temp_land;
+    const char* base_path = "logs/log_in_process";
+    const char* name[MAX_SIZE_BUFFER];
+    list voisins, temp_voisins, lands;
+    neighbour temp_voisin;
+
+    init_list(&voisins, sizeof(neighbour));
+    init_list(&temp_voisins, sizeof(neighbour));
+    init_list(&lands, sizeof(land));
+
+    for(int i = 0; i < nb_proc; i++) {
+        if(i != root_rank) {
+            MPI_Send(&i, 1, MPI_INT, i, ROOT_TAG_INIT_NODE, comm);
+            MPI_Recv(&main_loop_buffer_int[0] ,1 , MPI_INT, i, MPI_ANY_TAG, comm, &main_loop_status);
+            main_loop_tag  = main_loop_status.MPI_TAG;
+            if(main_loop_tag == ACK_TAG_BOOTSTRAP) {
+                printf("bootstraping node did it well \n");
+            } else if(main_loop_tag == GET_ENTRY_POINT) {
+                main_loop_buffer_int[0] = 1;
+                MPI_Send(&main_loop_buffer_int[0] ,1 , MPI_INT, i, SEND_ENTRY_POINT, comm);
+                MPI_Recv(&main_loop_buffer_int[0] ,1 , MPI_INT, i, ACK, comm, &main_loop_status);
+                sprintf(name, "%s_%d", base_path, i);
+                printf(" size : %d \n", strlen(name));
+                CAN_Log_informations(comm,root_rank, nb_proc, name);
+            }
+        }
+    }
+
+    CAN_Log_informations(comm,root_rank, nb_proc, "logs/end_log");
+
     return 1;
 }
 
@@ -123,7 +158,7 @@ int CAN_Root_init(MPI_Status *req_status, MPI_Comm comm, int com_rank, land *lan
     return 1;
 }
 
-void CAN_Rec_Neighbours(MPI_Status *req_status, MPI_Comm comm, int com_rank, land *land_id, list *voisins) {
+void CAN_Rec_Neighbours(MPI_Status *req_status, MPI_Comm comm, int com_rank, land *land_id, list *voisins, int *wait_for) {
     int nb_voisins, idx = 0, count, dummy = 0;
     unsigned int buffer_ui[MAX_SIZE_BUFFER];
     MPI_Status status;
@@ -145,6 +180,7 @@ void CAN_Rec_Neighbours(MPI_Status *req_status, MPI_Comm comm, int com_rank, lan
     list_apply(voisins, print_neighbour_cb);
     printf("\n");
     MPI_Send((&dummy) ,1 ,MPI_INT ,ROOT_PROCESS ,ACK ,comm);
+    *wait_for = MPI_ANY_SOURCE;
 }
 
 // handle  a Join REQUEST return 1 if wait for is changed (maybe not a good convention)
@@ -196,7 +232,7 @@ void CAN_Update_Neighbours(MPI_Status *req_status,const MPI_Comm comm,const int 
     printf("\n");
 }
 
-void CAN_Res_Request_to_join(MPI_Status *req_status,const MPI_Comm comm,const int com_rank , land *land_id, list *voisins) {
+void CAN_Res_Request_to_join(MPI_Status *req_status,const MPI_Comm comm,const int com_rank , land *land_id, list *voisins, int *wait_for) {
 	int main_loop_buffer_int[MAX_SIZE_BUFFER];
 	unsigned int land_buffer[MAX_SIZE_BUFFER];
 	MPI_Status status;
@@ -205,6 +241,7 @@ void CAN_Res_Request_to_join(MPI_Status *req_status,const MPI_Comm comm,const in
     MPI_Recv(&(land_buffer[0]), 4, MPI_UNSIGNED, req_status->MPI_SOURCE , REQUEST_RECEIVE_LAND, comm, &status);
     init_land(land_id, land_buffer[0], land_buffer[1] , land_buffer[2], land_buffer[3]);
     print_land(land_id);
+    (*wait_for) = req_status->MPI_SOURCE;
 }
 
 void CAN_Send_Neighbour_order(MPI_Status *req_status,const MPI_Comm comm, const list *voisins) {
@@ -259,34 +296,43 @@ int CAN_Node_Job(int com_rank, MPI_Comm comm) {
         main_loop_tag  = main_loop_status.MPI_TAG;
 
         if(main_loop_tag == ROOT_TAG_INIT_NODE) {
+        	//Reception de l'ordre d'insertion
         	CAN_Root_init(&main_loop_status, comm, com_rank, &land_id);
         }
 
         else if(main_loop_tag == REQUEST_TO_JOIN) {
+        	//Reception d'une demande pour joindre le réseau
+        	//réponse possible :faire apsser ou accepter
         	CAN_Request_to_join(&main_loop_status,comm,com_rank, &land_id, &voisins ,&wait_for);
         }
 
         else if(main_loop_tag == SEND_LAND_ORDER) {
+        	//Reception d'une demande e journalisation de la zone par le proc 0
         	CAN_Send_Land_order(&main_loop_status , comm, &land_id);
         }
 
         else if(main_loop_tag == RES_INIT_NEIGHBOUR) {
-        	CAN_Rec_Neighbours(&main_loop_status , comm, com_rank, &land_id, &voisins);
+        	//Reception des nouveau voisin
+        	CAN_Rec_Neighbours(&main_loop_status , comm, com_rank, &land_id, &voisins, &wait_for);
         }
 
         else if(main_loop_tag == UPDATE_NEIGBOUR) {
+        	//Receptiond un nouveau voisin
         	CAN_Update_Neighbours(&main_loop_status  , comm, com_rank , &land_id, &voisins);
         }
 
         else if(main_loop_tag == RES_REQUEST_TO_JOIN) {
-        	CAN_Res_Request_to_join(&main_loop_status, comm, com_rank , &land_id, &voisins);
+        	//Apres un,e deamdne pour joindre le réseau, un noued répon positivement
+        	CAN_Res_Request_to_join(&main_loop_status, comm, com_rank , &land_id, &voisins, &wait_for);
         }
 
         else if(main_loop_tag == SEND_NEIGBOUR_ORDER) {
+        	//Reception d'une demand de journalisation des voisisn du proc 0
         	CAN_Send_Neighbour_order(&main_loop_status, comm, &voisins);
         }
 
         else if(main_loop_tag == REQUEST_INIT_SPLIT) {
+        	//Split la zone et répartie le voisins
         	CAN_Request_init_split(&main_loop_status , comm, com_rank , &voisins, &land_id, &wait_for);
         }
 

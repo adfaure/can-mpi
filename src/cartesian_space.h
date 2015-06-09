@@ -137,9 +137,10 @@ void print_neighbour_cb(void *n);
 void free_neighbour_cb(void *);
 
 /**
-
- *x
+ *
  */
+void free_land_cb(void *);
+
 /**
  * @brief  A utiliser apèrs @split_land
  *         Permet d'extraire les deux frontières (@n1, @n2)

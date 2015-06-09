@@ -405,6 +405,10 @@ void init_land(land *l, unsigned  int x, unsigned  int y, unsigned int s_x, unsi
     l->size_y = s_y;
 }
 
+void free_land_cb(void *land_) {
+
+}
+
 bool is_land_contains(const land *l, unsigned int x, unsigned int y) {
     return ((l->x <= x && l->x + l->size_x > x) && (l->y <= y && l->y + l->size_y > y));
 }
