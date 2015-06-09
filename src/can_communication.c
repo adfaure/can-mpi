@@ -201,7 +201,7 @@ int CAN_REQ_Root_init(MPI_Status *req_status, MPI_Comm comm, int com_rank, land 
 
     get_random_id(&pair_id, SIZE_X, SIZE_Y);
     MPI_Get_count (req_status, MPI_INT, &count);
-    MPI_Recv(&(rec_buffer_int[0]) ,count , MPI_INT, req_src,
+    MPI_Recv(&(rec_buffer_int[0]) ,count , MPI_INT, req_status->MPI_SOURCE,
             req_status->MPI_TAG , comm, MPI_STATUS_IGNORE);
 
     if(rec_buffer_int[0] == 1) {
