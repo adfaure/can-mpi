@@ -49,7 +49,9 @@ void CAN_Recv_localise_timeout(int *loc, const pair *pair, int self_rank, int fi
 /**
  * job for the root process
  */
-int CAN_Root_Process_Job(int root_rank, MPI_Comm comm,int nb_proc);
+int CAN_Root_Process_Job(int root_rank, MPI_Comm comm, int proc_min, int proc_max, int nb_proc);
+
+int CAN_Root_Process_Job_Insert_One(int root_rank, MPI_Comm comm, int proc_to_insert, int nb_proc);
 
 /**
  * job nodes
@@ -61,5 +63,6 @@ int CAN_Node_Job(int com_rank, MPI_Comm comm);
  */
 void CAN_Attach_new_data(int self_rank, int first_node, MPI_Comm comm, pair *_pair, void *data, int data_type, unsigned int data_size);
 
+void prompt(int root_rank, MPI_Comm comm, int nb_proc);
 
 #endif
