@@ -232,8 +232,10 @@ int CAN_Root_Process_Job(int root_rank, MPI_Comm comm, int nb_proc) {
 int put(int root_rank, MPI_Comm comm, int nb_proc) {
     int data = 42;
     pair test;
+    can_data s_data;
     init_pair(&test, 550, 300);
     CAN_Attach_new_data(root_rank, 1, comm, &test, &data, DATA_INT , sizeof(int));
+    CAN_Fetch_data(comm, root_rank, 1,  &test, &s_data);
     CAN_Log_informations(comm, root_rank, nb_proc, "logs/end_log");
     printf("PUT DONE\n");
     return 1;
