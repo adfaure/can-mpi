@@ -468,7 +468,6 @@ void test_SPLIT_LAND_UPDATE_NEIGHBOUR(void) {
 
   split_land_update_neighbour(&l_out, &l1, &nghbrs_out, &nghbrs1, 42, 43);
 
-
   CU_ASSERT(nghbrs1.nb_elem == 3);
   CU_ASSERT(nghbrs_out.nb_elem == 5);
 
@@ -543,13 +542,68 @@ void test_SPLIT_LAND_UPDATE_NEIGHBOUR(void) {
   list_add_front(&nghbrs1, &n_le1 );
   split_land_update_neighbour(&l_out, &l1, &nghbrs_out, &nghbrs1, 5, 2);
 
+  /*
+  Problème après le split de 2
+
+  -> 1 ((0,  500),  (0,  1000))
+  -> 1 | [3] (500,  500),  (500)
+  -> 1 | [2] (500,  0),  (500)
+  -> 2 ((500,  250),  (0,  500))
+  -> 2 | [5] (750,  250),  (250)
+  -> 2 | [4] (750,  0),  (250)
+  -> 2 -- [3] (500,  500),  (250)
+  -> 2 | [1] (500,  0),  (250)
+  -> 3 ((500,  500),  (500,  500))
+  -> 3 -- [5] (750,  500),  (250)
+  -> 3 | [1] (500,  500),  (500)
+  -> 3 -- [2] (500,  500),  (250)
+  -> 4 ((750,  250),  (0,  250))
+  -> 4 -- [5] (750,  250),  (250)
+  -> 4 | [2] (750,  0),  (250)
+  -> 5 ((750,  250),  (250,  250))
+  -> 5 | [2] (750,  250),  (250)
+  -> 5 -- [3] (750,  500),  (250)
+  -> 5 -- [4] (750,  250),  (250)
+  -> 6 ((0,  3972709368),  (0,  32524))
+  -> 7 ((0,  4266011640),  (0,  32531))
+  -> 8 ((0,  763501560),  (0,  32655))
+  -> 9 ((0,  2007423992),  (0,  32712))
+  */
+
+  // clear
+  list_clear(&nghbrs_out,do_nothing);
+  init_land(&l_out, 0, 0, 0, 0);
+
+  land la;
+  list li;
+  neighbour n, n2, n3, n4;
+
+  init_land(&la, 500, 0, 250, 500); // rectangle vertical
+  init_list(&li, sizeof(neighbour));
+
+  init_neighbour(&n, 750, 250, 250, VOISIN_V, 5); // -> 2 | [5] (750,  250),  (250)
+  list_add_front(&li, &n);
+
+  init_neighbour(&n2, 750, 0, 250, VOISIN_V, 4); // -> 2 | [4] (750,  0),  (250)
+  list_add_front(&li, &n2);
+
+  init_neighbour(&n3, 500, 500, 250, VOISIN_H, 3); // -> 2 -- [3] (500,  500),  (250)
+  list_add_front(&li, &n3);
+
+  init_neighbour(&n4, 500, 0, 250, VOISIN_V, 1); // -> 2 | [1] (500,  0),  (250)
+  list_add_front(&li, &n4);
+
+  split_land_update_neighbour(&l_out, &la, &nghbrs_out, &nghbrs1, 42, 43);
+  list_apply(&nghbrs_out, print_one_neighbour);
+
+  CU_ASSERT(nghbrs_out.nb_elem == 4); // TODO c'est pas suffisant
 }
 
 
 
 void test_UPDATE_NEIGHBOURS(void) {
   land la;
-  neighbour n, n2, n_out;
+  neighbour n, n2, n3, n4, n_out;
   list li;
 
   // ---------
@@ -616,6 +670,7 @@ void test_UPDATE_NEIGHBOURS(void) {
   printf("\n");
 
 */
+
 }
 
 /* The main() function for setting up and running the tests.
