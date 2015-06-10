@@ -4,3 +4,13 @@ obj/cartesian_space.o
 obj/utils.o
 test/exe/cartesian_space_test
 test/exe/utils_test
+logs/log_in_process_2.svg
+logs/log_in_process_2.txt
+logs/log_in_process_3.svg
+logs/log_in_process_3.txt
+logs/log_in_process_4.svg
+logs/log_in_process_4.txt
+logs/log_in_process_5.svg
+logs/log_in_process_5.txt
+logs/log_in_process_6.svg
+logs/log_in_process_6.txt
