@@ -2,6 +2,7 @@
 #include "can_communication.h"
 
 int main(int argc, char**argv) {
+    const char str_debug[] = "debug";
     int com_rank, nb_proc;
     MPI_Init (&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &nb_proc);
@@ -9,7 +10,11 @@ int main(int argc, char**argv) {
     srand(time(NULL) * com_rank * nb_proc);
 
     if(com_rank == ROOT_PROCESS) {
-        prompt(ROOT_PROCESS, MPI_COMM_WORLD, nb_proc);
+        if (argc == 2 && (strcmp(str_debug, argv[1]) == 0)) {
+            prompt(ROOT_PROCESS, MPI_COMM_WORLD, nb_proc);
+        } else {
+            CAN_Root_Process_Job(ROOT_PROCESS, MPI_COMM_WORLD, nb_proc);
+        }
     } else {
         CAN_Node_Job(com_rank, MPI_COMM_WORLD);
     }

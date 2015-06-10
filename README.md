@@ -17,3 +17,13 @@ make test
 ```
 make mpi_can
 ```
+
+# execution avec prompt :
+```
+mpirun -np 7 ./mpi_can debug
+```
+
+# execution sans prompt :
+```
+mpirun -np 7 ./mpi_can
+```

@@ -616,7 +616,8 @@ void test_UPDATE_NEIGHBOURS(void) {
 }
 
 void test_PROBLEME_1 (void) {
-    // test case for PROBLEME_1 http://i.imgur.com/hyjGK3C.png to http://i.imgur.com/8qXTTlj.png
+    // test case for PROBLEME_1 http://i.imgur.com/hyjGK3C.png https://paste.kde.org/pm8trlzly
+    // to http://i.imgur.com/8qXTTlj.png https://paste.kde.org/pitfjpgq3
     // the problem occurs when 4 splits, he contacts 2, and 2 must not change his borbers with 1!
 
     land l_1, l_2, l_4;
