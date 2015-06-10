@@ -543,6 +543,44 @@ void test_SPLIT_LAND_UPDATE_NEIGHBOUR(void) {
   list_add_front(&nghbrs1, &n_top );
   list_add_front(&nghbrs1, &n_le1 );
   split_land_update_neighbour(&l_out, &l1, &nghbrs_out, &nghbrs1, 5, 2);
+
+  // relatif au problème PROBLEME_1
+  land l_1, l_2;
+  list ns_1, ns_2;
+  neighbour n_1_2, n_2_1, n_2_4;
+
+  init_land(&l_1, 0, 0, 500, 1000);
+  init_land(&l_2, 500, 0, 250, 500);
+
+  // neighbours of l_1:
+  init_list(&ns_1, sizeof(neighbour));
+  init_neighbour(&n_1_2, 500, 0, 500, VOISIN_V, 2);
+  list_add_front(&ns_1, &n_1_2);
+
+  // neighbours of l_2:
+  init_list(&ns_2, sizeof(neighbour));
+  init_neighbour(&n_2_1, 500, 0, 500, VOISIN_V, 1);
+  init_neighbour(&n_2_4, 750, 0, 500, VOISIN_V, 4);
+  list_add_front(&ns_2, &n_2_1);
+  list_add_front(&ns_2, &n_2_4);
+
+  // faire un neigbour avec
+  // | [2] (750,  250),  (250)
+  neighbour n_5_2;
+  init_neighbour(&n_5_2, 750, 250, 250, VOISIN_V, 2);
+
+  printf("\n****Les frontières du land 2: \n");
+  list_apply(&ns_2, print_one_neighbour);
+  printf("\n");
+
+  update_neighbours(&ns_2, &l_2, &n_5_2);
+
+  printf("\n****Les frontières du land 2 après le update_neighbours: \n");
+  list_apply(&ns_2, print_one_neighbour);
+  printf("\n");
+
+  list_get_index(&ns_2, 2, &n_2_1);
+  CU_ASSERT(n_2_1.size == 500);
 }
 
 void test_UPDATE_NEIGHBOURS(void) {
