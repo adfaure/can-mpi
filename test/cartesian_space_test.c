@@ -672,6 +672,15 @@ void test_PROBLEME_1 (void) {
     // | [1] (500,  0),  (500)
     // le land 2 n'a pas encore redimensionné sa frontière avec 4 (c'est normal on lui a pas demandé)
 
+    // on demande au land 2 de mettre a jour ses frontières
+    // pour cela on a besoin de choper le nouveau neighbour (présent dans le land_5)
+    // on triche un peu car on sait que c'est le 3 élément, donc indice 2
+    neighbour n_5_2;
+    list_get_index(&ns_5, 2, &n_5_2);
+
+    // update_neighbours(&ns_2, &l_2, nouveau_neigbour);
+
+
 
     // il faut simuler l'envoit des nouveaux neighbours de 5 à 2
     // comme ce que fait void CAN_REQ_Rec_Neighbours(MPI_Status *req_status, MPI_Comm comm, int com_rank, land *land_id, list *voisins, int *wait_for) {
