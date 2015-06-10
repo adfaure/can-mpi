@@ -1,5 +1,7 @@
 #include "cartesian_space.h"
 
+#define UNUSED(x) (void)(x)
+
 int CAN_Send_neighbour(const neighbour *neig, int mpi_tag, int mpi_destinataire,  MPI_Comm comm) {
     unsigned int buffer[5],  size = (int) (sizeof(neighbour) / sizeof(unsigned int));
     buffer[0] = neig->x;
@@ -247,7 +249,7 @@ void print_neighbour(const neighbour *n) {
     }
 }
 
-void do_really_nothing (void * n) {}
+void do_really_nothing (void * n) {UNUSED(n);}
 
 int update_neighbours(list *l, const land*land, const neighbour *new_n) {
   neighbour temp;
@@ -390,6 +392,7 @@ int is_over_neighbour_begin(const neighbour *n1, const neighbour *n2) {
 
 void free_neighbour_cb(void *n) {
     neighbour elem = *((neighbour *) n);
+    UNUSED(elem);
 }
 
 void print_neighbour_cb(void *n) {
@@ -406,7 +409,7 @@ void init_land(land *l, unsigned  int x, unsigned  int y, unsigned int s_x, unsi
 }
 
 void free_land_cb(void *land_) {
-
+    UNUSED(land_);
 }
 
 bool is_land_contains(const land *l, unsigned int x, unsigned int y) {

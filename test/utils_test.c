@@ -4,6 +4,8 @@
 #include "../src/utils.h"
 #include "../src/cartesian_space.h"
 
+#define UNUSED(x) (void)(x)
+
 int init_suite1 (void) {return 0;}
 
 int clean_suite1(void) {return 0;}
@@ -63,7 +65,7 @@ void test_LIST_REPLACE_INDEX(void) {
   CU_ASSERT(n3.x == n.x);
 }
 
-void do_nothing (void * n) {}
+void do_nothing (void * n) {UNUSED(n);}
 
 void test_LIST_REMOVE_FRONT(void) {
   list nghbrs;

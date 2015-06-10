@@ -3,6 +3,8 @@
 
 #include "../src/cartesian_space.h"
 
+#define UNUSED(x) (void)(x)
+
 /* The suite initialization function.
  * Opens the temporary file used by the tests.
  * Returns zero on success, non-zero otherwise.
@@ -395,7 +397,7 @@ void print_one_neighbour(void * nghbr) {
   print_neighbour((neighbour *) nghbr);
 }
 
-void do_nothing (void * n) {}
+void do_nothing (void * n) {UNUSED(n);}
 
 void test_SPLIT_LAND_UPDATE_NEIGHBOUR(void) {
   land l1, l_out;
@@ -541,69 +543,11 @@ void test_SPLIT_LAND_UPDATE_NEIGHBOUR(void) {
   list_add_front(&nghbrs1, &n_top );
   list_add_front(&nghbrs1, &n_le1 );
   split_land_update_neighbour(&l_out, &l1, &nghbrs_out, &nghbrs1, 5, 2);
-
-  /*
-  Problème après le split de 2
-
-  -> 1 ((0,  500),  (0,  1000))
-  -> 1 | [3] (500,  500),  (500)
-  -> 1 | [2] (500,  0),  (500)
-  -> 2 ((500,  250),  (0,  500))
-  -> 2 | [5] (750,  250),  (250)
-  -> 2 | [4] (750,  0),  (250)
-  -> 2 -- [3] (500,  500),  (250)
-  -> 2 | [1] (500,  0),  (250)
-  -> 3 ((500,  500),  (500,  500))
-  -> 3 -- [5] (750,  500),  (250)
-  -> 3 | [1] (500,  500),  (500)
-  -> 3 -- [2] (500,  500),  (250)
-  -> 4 ((750,  250),  (0,  250))
-  -> 4 -- [5] (750,  250),  (250)
-  -> 4 | [2] (750,  0),  (250)
-  -> 5 ((750,  250),  (250,  250))
-  -> 5 | [2] (750,  250),  (250)
-  -> 5 -- [3] (750,  500),  (250)
-  -> 5 -- [4] (750,  250),  (250)
-  -> 6 ((0,  3972709368),  (0,  32524))
-  -> 7 ((0,  4266011640),  (0,  32531))
-  -> 8 ((0,  763501560),  (0,  32655))
-  -> 9 ((0,  2007423992),  (0,  32712))
-  */
-
-  // clear
-  list_clear(&nghbrs_out,do_nothing);
-  init_land(&l_out, 0, 0, 0, 0);
-
-  land la;
-  list li;
-  neighbour n, n2, n3, n4;
-
-  init_land(&la, 500, 0, 250, 500); // rectangle vertical
-  init_list(&li, sizeof(neighbour));
-
-  init_neighbour(&n, 750, 250, 250, VOISIN_V, 5); // -> 2 | [5] (750,  250),  (250)
-  list_add_front(&li, &n);
-
-  init_neighbour(&n2, 750, 0, 250, VOISIN_V, 4); // -> 2 | [4] (750,  0),  (250)
-  list_add_front(&li, &n2);
-
-  init_neighbour(&n3, 500, 500, 250, VOISIN_H, 3); // -> 2 -- [3] (500,  500),  (250)
-  list_add_front(&li, &n3);
-
-  init_neighbour(&n4, 500, 0, 250, VOISIN_V, 1); // -> 2 | [1] (500,  0),  (250)
-  list_add_front(&li, &n4);
-
-  split_land_update_neighbour(&l_out, &la, &nghbrs_out, &nghbrs1, 42, 43);
-  list_apply(&nghbrs_out, print_one_neighbour);
-
-  CU_ASSERT(nghbrs_out.nb_elem == 4); // TODO c'est pas suffisant
 }
-
-
 
 void test_UPDATE_NEIGHBOURS(void) {
   land la;
-  neighbour n, n2, n3, n4, n_out;
+  neighbour n, n2, n_out;
   list li;
 
   // ---------
@@ -663,14 +607,82 @@ void test_UPDATE_NEIGHBOURS(void) {
   update_neighbours(&li, &la, &n);
 
   CU_ASSERT(li.nb_elem == 2);
-
 /*
    printf("\n");
   list_apply(&li, print_one_neighbour);
   printf("\n");
 
 */
+}
 
+void test_PROBLEME_1 (void) {
+    // test case for PROBLEME_1 http://i.imgur.com/hyjGK3C.png to http://i.imgur.com/8qXTTlj.png
+    // the problem occurs when 4 splits, he contacts 2, and 2 must not change his borbers with 1!
+
+    land l_1, l_2, l_4;
+    list ns_1, ns_2, ns_4;
+    neighbour n_1_2, n_2_1, n_2_3, n_2_4, n_4_3, n_4_2; // n_2_1 means a neighbour in land 2 that is frontier with land 1
+
+    init_land(&l_1, 0, 0, 500, 1000);
+    init_land(&l_2, 500, 0, 250, 500);
+    init_land(&l_4, 750, 0, 250, 500);
+
+    // neighbours of l_1:
+    init_list(&ns_1, sizeof(neighbour));
+    init_neighbour(&n_1_2, 500, 0, 500, VOISIN_V, 2);
+    list_add_front(&ns_1, &n_1_2);
+
+    // neighbours of l_2:
+    init_list(&ns_2, sizeof(neighbour));
+    init_neighbour(&n_2_1, 500, 0, 500, VOISIN_V, 1);
+    init_neighbour(&n_2_3, 500, 500, 250, VOISIN_H, 3);
+    init_neighbour(&n_2_4, 750, 0, 500, VOISIN_V, 4);
+    list_add_front(&ns_2, &n_2_1);
+    list_add_front(&ns_2, &n_2_3);
+    list_add_front(&ns_2, &n_2_4);
+
+    // neighbours of l_4:
+    init_list(&ns_4, sizeof(neighbour));
+    init_neighbour(&n_4_2, 750, 0, 500, VOISIN_V, 2);
+    init_neighbour(&n_4_3, 750, 500, 250, VOISIN_H, 3);
+    list_add_front(&ns_4, &n_4_2);
+    list_add_front(&ns_4, &n_4_3);
+
+    // end of configuration http://i.imgur.com/hyjGK3C.png
+
+    // spliting 4 to (4, 5)
+    land l_5;
+    list ns_5;
+    init_list(&ns_5, sizeof(neighbour));
+    split_land_update_neighbour(&l_5, &l_4, &ns_5, &ns_4, 5, 4);
+
+    // on va voir ce qu'il y a comme frontières dans le land_5:
+    printf("\nLes frontières du land 5: \n");
+    list_apply(&ns_5, print_one_neighbour);
+    printf("\n");
+    // les frontières du land_5 sont bonnes
+
+    // on va voir ce qu'il y a comme frontières dans le land_2:
+    printf("\nLes frontières du land 2: \n");
+    list_apply(&ns_2, print_one_neighbour);
+    printf("\n");
+    // Les frontières du land 2:
+    // | [4] (750,  0),  (500)
+    // -- [3] (500,  500),  (250)
+    // | [1] (500,  0),  (500)
+    // le land 2 n'a pas encore redimensionné sa frontière avec 4 (c'est normal on lui a pas demandé)
+
+
+    // il faut simuler l'envoit des nouveaux neighbours de 5 à 2
+    // comme ce que fait void CAN_REQ_Rec_Neighbours(MPI_Status *req_status, MPI_Comm comm, int com_rank, land *land_id, list *voisins, int *wait_for) {
+    // mais sans MPI_SEND :)
+
+    // neighbour_to_buffer(l,  buffer);
+
+
+    // land 2 must have 4 frontiers now
+    // checks frontiers of land 2 to be sure that the frontier with land 1 NOT CHANGED
+    // TODO IMPLEMENT ME !!!! :)
 }
 
 /* The main() function for setting up and running the tests.
@@ -710,7 +722,8 @@ int main()
      (NULL == CU_add_test(pSuite, "test of land_extract_neighbourg_after_split()", test_LAND_EXTRACT_NEIGHBOURG_AFTER_SPLIT)) ||
      (NULL == CU_add_test(pSuite, "test of update_border()", test_UPDATE_BORDER)) ||
      (NULL == CU_add_test(pSuite, "test of split_land_update_neighbour()", test_SPLIT_LAND_UPDATE_NEIGHBOUR)) ||
-     (NULL == CU_add_test(pSuite, "test of test_UPDATE_NEIGHBOURS()", test_UPDATE_NEIGHBOURS))
+     (NULL == CU_add_test(pSuite, "test of test_UPDATE_NEIGHBOURS()", test_UPDATE_NEIGHBOURS)) ||
+     (NULL == CU_add_test(pSuite, "test case for PROBLEME_1 http://i.imgur.com/hyjGK3C.png to http://i.imgur.com/8qXTTlj.png", test_PROBLEME_1))
 
      ) {
       CU_cleanup_registry();

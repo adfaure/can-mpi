@@ -1,5 +1,7 @@
 #include "utils.h"
 
+#define UNUSED(x) (void)(x)
+
 void get_random_id(pair *p, int max_x, int max_y) {
     p->x = rand() % max_x;
     p->y = rand() % max_y;
@@ -127,6 +129,8 @@ int list_remove_front(list *l, void(*free_function)(void *data)) {
 }
 
 int list_cp_revert(const list *src, void(*free_function)(void *data), list *dst) {
+    UNUSED(free_function);
+
     void *temp = malloc(sizeof(src->element_size));
     init_list(dst,src->element_size);
     for(int i = 0; i < src->nb_elem ; i++) {

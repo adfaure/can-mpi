@@ -1,5 +1,7 @@
 #include "can_communication.h"
 
+#define UNUSED(x) (void)(x)
+
 void CAN_Recv_localise(int *loc, const pair *_pair,  int self_rank,  int first_node, MPI_Comm comm) {
     MPI_Status status;
     int *buffer = (int*) malloc(sizeof(int) * 3);
@@ -299,11 +301,9 @@ void CAN_REQ_Attach_new_data(MPI_Status *req_status, MPI_Comm comm , const int c
     }
 }
 
-void  CAN_Fetch_data(MPI_Comm comm, int com_rank, int first_rank ,const pair *pair, can_data * elem) {
-	int buffer_int[MAX_SIZE_BUFFER], count, val_ret = 0;
+void CAN_Fetch_data(MPI_Comm comm, int com_rank, int first_rank ,const pair *pair, can_data * elem) {
+	int buffer_int[MAX_SIZE_BUFFER], count;
 	char buffer_char[MAX_SIZE_BUFFER];
-	neighbour neighbour_temp_find;
-	can_data temp_data;
 	MPI_Status status;
 
 	buffer_int[0] = com_rank;
@@ -326,7 +326,7 @@ void CAN_REQ_Fetch_data(MPI_Status *req_status ,MPI_Comm comm,int com_rank ,cons
 	int from = req_status->MPI_SOURCE, tag = req_status->MPI_TAG;
 	pair rec_pair;
 	neighbour neighbour_temp_find;
-	can_data temp_data;
+
     MPI_Get_count (req_status, MPI_INT, &count);
     MPI_Recv(&buffer_int[0] ,count, MPI_INT, from, tag, comm, req_status);
     init_pair(&rec_pair, buffer_int[1], buffer_int[2]);
@@ -379,6 +379,8 @@ int CAN_REQ_Root_init(MPI_Status *req_status, MPI_Comm comm, int com_rank, land 
 }
 
 void CAN_REQ_Rec_Neighbours(MPI_Status *req_status, MPI_Comm comm, int com_rank, land *land_id, list *voisins, int *wait_for) {
+    UNUSED(land_id);
+
     int nb_voisins, idx = 0, count, dummy = 0;
     unsigned int buffer_ui[MAX_SIZE_BUFFER];
     MPI_Status status;
@@ -457,7 +459,10 @@ void CAN_REQ_Update_Neighbours(MPI_Status *req_status,const MPI_Comm comm,const 
 }
 
 void CAN_REQ_Res_Request_to_join(MPI_Status *req_status,const MPI_Comm comm,const int com_rank , land *land_id, list *voisins, int *wait_for) {
-	int main_loop_buffer_int[MAX_SIZE_BUFFER];
+    UNUSED(com_rank);
+    UNUSED(voisins);
+
+    int main_loop_buffer_int[MAX_SIZE_BUFFER];
 	unsigned int land_buffer[MAX_SIZE_BUFFER];
 	MPI_Status status;
     MPI_Recv(&main_loop_buffer_int[0] ,1, MPI_INT, req_status->MPI_SOURCE, req_status->MPI_TAG, comm, &status);
@@ -498,6 +503,7 @@ void CAN_REQ_Request_init_split(MPI_Status *req_status, const MPI_Comm comm, con
 int CAN_Node_Job(int com_rank, MPI_Comm comm) {
     int wait_for = -1;
     unsigned int main_loop_from;
+    UNUSED(main_loop_from);
     int main_loop_tag; // wait_array on attend un message d'une source avec un tag
     list voisins, temp_voisins;
     land land_id;
