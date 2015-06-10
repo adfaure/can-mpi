@@ -463,6 +463,7 @@ void log_factory(FILE *f,  const void *data,  int CODE,  int from) {
 }
 
 void create_svg_logs(const char* path,const int size_x, const int size_y ,const list *list_lands) {
+
     FILE *f = fopen(path, "w+");
     if(!f) {
         fprintf(stderr, "erreur lors de l'ouverture du fichier : %s", path);

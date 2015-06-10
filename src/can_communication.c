@@ -46,19 +46,21 @@ void CAN_Log_informations(MPI_Comm comm,const int root_rank, const int nb_proc, 
     neighbour temp_voisin;
     FILE * file;
 
-    const char svg[4] = ".svg";
-    const char txt[4] = ".txt";
+    const char svg[5] = ".svg\0";
+    const char txt[5] = ".txt\0";
     int size = strlen(base_path);
-    char *txt_file      = malloc((size * sizeof(char)) + ( 4 * sizeof(char)) + 1);
-	char *svg_name_file = malloc((size * sizeof(char)) + ( 4 * sizeof(char)) + 1);
-	txt_file[size] = '\n';
-	svg_name_file[size] = '\n';
+    char *txt_file      = malloc((size * sizeof(char)) + ( 5 * sizeof(char)) + 1);
+    char *svg_name_file = malloc((size * sizeof(char)) + ( 5 * sizeof(char)) + 1);
+    txt_file[size - 1] = '\0';
+    svg_name_file[size - 1] = '\0';
 
 	strcpy(txt_file, base_path);
 	strcat(txt_file, txt);
 
 	strcpy(svg_name_file, base_path);
 	strcat(svg_name_file, svg);
+
+    printf(" %s  %s \n", svg_name_file, base_path);
 
     file = fopen (txt_file, "w+");
     if(!file) {
@@ -393,6 +395,7 @@ void CAN_REQ_Rec_Neighbours(MPI_Status *req_status, MPI_Comm comm, int com_rank,
             continue;
         }
         CAN_Send_neighbour(&temp_voisin,UPDATE_NEIGBOUR, temp_voisin.com_rank, comm);
+        MPI_Recv(&dummy, 1, MPI_INT,temp_voisin.com_rank, ACK, comm, &status);
     }
     printf("[ %d ] voisins recu \n", com_rank);
     list_apply(voisins, print_neighbour_cb);
@@ -440,10 +443,12 @@ void CAN_REQ_Send_Land_order(MPI_Status *req_status,const MPI_Comm comm, const l
 
 void CAN_REQ_Update_Neighbours(MPI_Status *req_status,const MPI_Comm comm,const int com_rank ,const land *land_id, list *voisins) {
 	neighbour temp_voisin;
+    int dummy = 0;
     CAN_Receive_neighbour(&temp_voisin, req_status->MPI_TAG, req_status->MPI_SOURCE,comm);
     printf("[ %d ] Mes amis je suis heureux de vous annoncer que nous acceuilons à présent un nouveau voisins [%d]! \n ", com_rank, req_status->MPI_SOURCE);
     temp_voisin.com_rank = req_status->MPI_SOURCE;
     update_neighbours(voisins, land_id ,&temp_voisin);
+    MPI_Send((&dummy) ,1 ,MPI_INT ,req_status->MPI_SOURCE, ACK ,comm);
     printf("[ %d ] voisins recu \n", com_rank);
     print_neighbour(&temp_voisin);
     printf("\n");
