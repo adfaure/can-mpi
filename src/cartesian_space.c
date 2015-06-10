@@ -271,9 +271,9 @@ int update_neighbours(list *l, const land*land, const neighbour *new_n) {
 int are_equals_neighbours(const neighbour*n1, const neighbour *n2) {
     int res = 0;
     if(n1->orientation == VOISIN_H && n1->orientation == n2->orientation) {
-        res = (n1->x == n2->x && n1->size == n2->size);
+        res = (n1->x == n2->x && n1->size == n2->size) && (n1->y !=  n2->y);
     } else if(n1->orientation == VOISIN_V && n1->orientation == n2->orientation) {
-        res = (n1->y == n2->y && n1->size == n2->size);
+        res = (n1->y == n2->y && n1->size == n2->size)  && (n1->x!=  n2->x);;
     }
     return res;
 }
@@ -335,11 +335,13 @@ int is_contains_neighbour(const neighbour *n1, const neighbour *n2) {
     if(n1->orientation != n2->orientation)
         return false;
     if(n1->orientation ==  VOISIN_V) {
+    	if(n1->x !=  n2->x) return 0;
         ind_max2 = n2->size + n2->y;
         ind_max1 = n1->size + n1->y;
         ind_beg1 = n1->y;
         ind_beg2 = n2->y;
     } else if(n1->orientation ==  VOISIN_H) {
+    	if(n1->y !=  n2->y) return 0;
         ind_max2 = n2->size + n2->x;
         ind_max1 = n1->size + n1->x;
         ind_beg1 = n1->x;
@@ -356,12 +358,14 @@ int is_over_neighbour_end(const neighbour *n1, const neighbour *n2) {
     if(n1->orientation != n2->orientation)
         return false;
     if(n1->orientation ==  VOISIN_V) {
+    	if(n1->x !=  n2->x) return false;
         ind_max2 = n2->size + n2->y;
         ind_max1 = n1->size + n1->y;
         ind_beg1 = n1->y;
         ind_beg2 = n2->y;
     } else if(n1->orientation ==  VOISIN_H) {
-        ind_max2 = n2->size + n2->x;
+    	if(n1->y !=  n2->y) return false;
+    	ind_max2 = n2->size + n2->x;
         ind_max1 = n1->size + n1->x;
         ind_beg1 = n1->x;
         ind_beg2 = n2->x;
@@ -377,11 +381,15 @@ int is_over_neighbour_begin(const neighbour *n1, const neighbour *n2) {
     if(n1->orientation != n2->orientation)
         return false;
     if(n1->orientation ==  VOISIN_V) {
+    	if(n1->x !=  n2->x) return 0;
+
         ind_max2 = n2->size + n2->y;
         ind_max1 = n1->size + n1->y;
         ind_beg1 = n1->y;
         ind_beg2 = n2->y;
     } else if(n1->orientation ==  VOISIN_H) {
+    	if(n1->y !=  n2->y) return 0;
+
         ind_max2 = n2->size + n2->x;
         ind_max1 = n1->size + n1->x;
         ind_beg1 = n1->x;
