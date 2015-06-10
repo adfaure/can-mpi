@@ -678,9 +678,16 @@ void test_PROBLEME_1 (void) {
     // on triche un peu car on sait que c'est le 3 élément, donc indice 2
     neighbour n_5_2;
     list_get_index(&ns_5, 2, &n_5_2);
+    update_neighbours(&ns_2, &l_2, &n_5_2);
 
-    // update_neighbours(&ns_2, &l_2, nouveau_neigbour);
-
+    // on va voir a nouveau ce qu'il y a comme frontières dans le land_2:
+    printf("\nLes frontières du land 2 après le update_neighbours: \n");
+    list_apply(&ns_2, print_one_neighbour);
+    printf("\n");
+    // | [2] (750,  250),  (250)
+    // | [4] (750,  0),  (250)
+    // -- [3] (500,  500),  (250)
+    // | [1] (500,  0),  (250)
 
 
     // il faut simuler l'envoit des nouveaux neighbours de 5 à 2
