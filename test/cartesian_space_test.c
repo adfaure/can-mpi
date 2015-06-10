@@ -583,6 +583,80 @@ void test_SPLIT_LAND_UPDATE_NEIGHBOUR(void) {
   CU_ASSERT(n_2_1.size == 500);
 }
 
+void test_PROBLEME_2 (void) {
+    // **************************************************************************
+    // relatif au problème PROBLEME_2
+
+    // situation OK:
+    //  description textuelle (log): https://paste.kde.org/p4sib67pd
+    //  SVG : http://i.imgur.com/EVOrvUZ.png
+
+    // situation pas bonne (après split de 2 en (2,5)):
+    //  description textuelle (log): https://paste.kde.org/pnzpiayoz
+    //  SVG : http://i.imgur.com/CuXT0e7.png
+
+    // le land 4 avait parmis ses voisins le land 3
+    // et après le split de 2 en (2,5), le 5 à prévenu le 4
+    // d'une mise à jour, 4 à bien mis à jour son coté droit,
+    // mais a aussi mis a jour son coté gauche et a supprimé la bordure qu'il avait avec 3 !!!
+
+
+    // on va avoir besoin du land 4, du land 5
+    land l_4, l_5;
+    // et de leurs listes de frontières
+    list ns_4, ns_5;
+    // et des frontières
+    neighbour n_4_3, n_4_2, n_5_4;
+    // n_5_4 est la nouvelle frontière.
+    neighbour n_after_1, n_after_2;
+
+    init_land(&l_4, 250, 500, 250, 500); // le land qui va faire nawak avec ses frontières
+    init_land(&l_5, 500, 500, 500, 500); // le land issue du split
+
+    init_list(&ns_4, sizeof(neighbour));
+    init_list(&ns_5, sizeof(neighbour));
+
+    init_neighbour(&n_4_3, 250, 500, 500, VOISIN_V, 3); // la frontière qui va etre supprimé ANORMALEMENT
+    init_neighbour(&n_4_2, 500, 500, 500, VOISIN_V, 2); // la frontière qui va etre supprimé normalement
+    init_neighbour(&n_5_4, 500, 500, 500, VOISIN_V, 4); // la nouvelle frontière
+
+    list_add_front(&ns_4, &n_4_3);
+    list_add_front(&ns_4, &n_4_2);
+
+    list_add_front(&ns_5, &n_5_4);
+
+    printf("\n****Les frontières du land 2 (tout va bien): \n"); // je dis land 2 mais j'affiche land 5 mais c'est normal car je veux éviter de déclarer un land pour rien, mais c'est bon
+    list_apply(&ns_5, print_one_neighbour);
+    printf("\n");
+
+    printf("\n****Les frontières du land 4 (tout va bien): \n");
+    list_apply(&ns_4, print_one_neighbour);
+    printf("\n");
+
+    update_neighbours(&ns_4, &l_4, &n_5_4);
+
+    printf("\n****Les frontières du land 5 (apres update): \n");
+    list_apply(&ns_5, print_one_neighbour);
+    printf("\n");
+
+    printf("\n****Les frontières du land 4 (apres update): \n");
+    list_apply(&ns_4, print_one_neighbour);
+    printf("\n");
+
+    // le land 4 devrait avoir 2 frontières, la nouvelle et l'ancienne non touchée !!!
+    CU_ASSERT(ns_4.nb_elem == 2);
+
+    // l'ordre n'est pas important
+    list_get_index(&ns_4, 0, &n_after_1);
+    list_get_index(&ns_4, 1, &n_after_2);
+
+    // mais l'une doit etre:
+    //  | [x] (500,  500),  (500)
+    // et l'autre doit etre:
+    // | [x] (250,  500),  (500)
+    CU_ASSERT((n_after_1.x == 250 && n_after_2.x == 500) || (n_after_1.x == 500 && n_after_2.x == 250));
+}
+
 void test_UPDATE_NEIGHBOURS(void) {
   land la;
   neighbour n, n2, n_out;
@@ -778,7 +852,8 @@ int main()
      (NULL == CU_add_test(pSuite, "test of update_border()", test_UPDATE_BORDER)) ||
      (NULL == CU_add_test(pSuite, "test of split_land_update_neighbour()", test_SPLIT_LAND_UPDATE_NEIGHBOUR)) ||
      (NULL == CU_add_test(pSuite, "test of test_UPDATE_NEIGHBOURS()", test_UPDATE_NEIGHBOURS)) ||
-     (NULL == CU_add_test(pSuite, "test case for PROBLEME_1 http://i.imgur.com/hyjGK3C.png to http://i.imgur.com/8qXTTlj.png", test_PROBLEME_1))
+     (NULL == CU_add_test(pSuite, "test case for PROBLEME_1 http://i.imgur.com/hyjGK3C.png to http://i.imgur.com/8qXTTlj.png", test_PROBLEME_1)) ||
+     (NULL == CU_add_test(pSuite, "test case for PROBLEME_2 http://i.imgur.com/EVOrvUZ.png --> http://i.imgur.com/CuXT0e7.png", test_PROBLEME_2))
 
      ) {
       CU_cleanup_registry();
