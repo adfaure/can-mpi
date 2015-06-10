@@ -68,7 +68,7 @@ typedef struct _land_storage {
 /**
  *
  */
-void init_data(can_data *data, unsigned int data_size, unsigned int data_type, void *elem);
+void init_data(can_data *data, unsigned int data_size, unsigned int data_type,const void *elem);
 
 /**
  *

@@ -9,9 +9,9 @@ int main(int argc, char**argv) {
     srand(time(NULL) * com_rank * nb_proc);
 
     if(com_rank == ROOT_PROCESS) {
-      prompt(ROOT_PROCESS, MPI_COMM_WORLD, nb_proc);
+        prompt(ROOT_PROCESS, MPI_COMM_WORLD, nb_proc);
     } else {
-      CAN_Node_Job(com_rank, MPI_COMM_WORLD);
+        CAN_Node_Job(com_rank, MPI_COMM_WORLD);
     }
 
     MPI_Finalize();

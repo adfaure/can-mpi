@@ -24,6 +24,8 @@
 #define RES_INIT_NEIGHBOUR   56
 #define UPDATE_NEIGBOUR      789
 #define ATTACH_NEW_DATA      888
+#define FETCH_DATA           999
+#define SEND_FETCH_DATA      111
 
 #define DATA_INT 0
 
@@ -49,8 +51,7 @@ void CAN_Recv_localise_timeout(int *loc, const pair *pair, int self_rank, int fi
 /**
  * job for the root process
  */
-int CAN_Root_Process_Job(int root_rank, MPI_Comm comm, int proc_min, int proc_max, int nb_proc);
-
+int CAN_Root_Process_Job(int root_rank, MPI_Comm comm,int nb_proc);
 int CAN_Root_Process_Job_Insert_One(int root_rank, MPI_Comm comm, int proc_to_insert, int nb_proc);
 
 /**
