@@ -569,15 +569,15 @@ void test_SPLIT_LAND_UPDATE_NEIGHBOUR(void) {
   neighbour n_5_2;
   init_neighbour(&n_5_2, 750, 250, 250, VOISIN_V, 2);
 
-  printf("\n****Les frontières du land 2: \n");
-  list_apply(&ns_2, print_one_neighbour);
-  printf("\n");
+  //printf("\n****Les frontières du land 2: \n");
+  //list_apply(&ns_2, print_one_neighbour);
+  //printf("\n");
 
   update_neighbours(&ns_2, &l_2, &n_5_2);
 
-  printf("\n****Les frontières du land 2 après le update_neighbours: \n");
-  list_apply(&ns_2, print_one_neighbour);
-  printf("\n");
+  //printf("\n****Les frontières du land 2 après le update_neighbours: \n");
+  //list_apply(&ns_2, print_one_neighbour);
+  //printf("\n");
 
   list_get_index(&ns_2, 2, &n_2_1);
   CU_ASSERT(n_2_1.size == 500);
@@ -696,15 +696,15 @@ void test_PROBLEME_1 (void) {
     split_land_update_neighbour(&l_5, &l_4, &ns_5, &ns_4, 5, 4);
 
     // on va voir ce qu'il y a comme frontières dans le land_5:
-    printf("\nLes frontières du land 5: \n");
-    list_apply(&ns_5, print_one_neighbour);
-    printf("\n");
+    //printf("\nLes frontières du land 5: \n");
+    //list_apply(&ns_5, print_one_neighbour);
+    //printf("\n");
     // les frontières du land_5 sont bonnes
 
     // on va voir ce qu'il y a comme frontières dans le land_2:
-    printf("\nLes frontières du land 2: \n");
-    list_apply(&ns_2, print_one_neighbour);
-    printf("\n");
+    //printf("\nLes frontières du land 2: \n");
+    //list_apply(&ns_2, print_one_neighbour);
+    //printf("\n");
     // Les frontières du land 2:
     // | [4] (750,  0),  (500)
     // -- [3] (500,  500),  (250)
@@ -719,9 +719,9 @@ void test_PROBLEME_1 (void) {
     update_neighbours(&ns_2, &l_2, &n_5_2);
 
     // on va voir a nouveau ce qu'il y a comme frontières dans le land_2:
-    printf("\nLes frontières du land 2 après le update_neighbours: \n");
-    list_apply(&ns_2, print_one_neighbour);
-    printf("\n");
+    //printf("\nLes frontières du land 2 après le update_neighbours: \n");
+    //list_apply(&ns_2, print_one_neighbour);
+    //printf("\n");
     // | [2] (750,  250),  (250)
     // | [4] (750,  0),  (250)
     // -- [3] (500,  500),  (250)
