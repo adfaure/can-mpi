@@ -17,7 +17,7 @@ int main(int argc, char**argv) {
         seed = time(NULL) + com_rank * nb_proc;
     }
     srand(seed);
-    printf("random seed = %d \n", seed);
+    printf("[ %d ]random seed = %d \n",com_rank, seed);
     fflush(stdout);
 
     if(com_rank == ROOT_PROCESS) {
@@ -28,6 +28,7 @@ int main(int argc, char**argv) {
             prompt(ROOT_PROCESS, MPI_COMM_WORLD, nb_proc);
         } else {
             CAN_Root_Process_Job(ROOT_PROCESS, MPI_COMM_WORLD, nb_proc);
+            printf("insert ok \n");
         }
     } else {
         CAN_Node_Job(com_rank, MPI_COMM_WORLD);

@@ -70,8 +70,6 @@ void CAN_Log_informations(MPI_Comm comm,const int root_rank, const int nb_proc, 
 	strcpy(svg_name_file, base_path);
 	strcat(svg_name_file, svg);
 
-    printf(" %s  %s \n", svg_name_file, base_path);
-
     file = fopen (txt_file, "w+");
     if(!file) {
         printf(" erreur lors de l'ouverture du fichier de log \n");
@@ -210,7 +208,6 @@ int CAN_Root_Process_Job_Insert_One(int root_rank, MPI_Comm comm, int proc_to_in
             CAN_Log_informations(comm, root_rank, nb_proc, (char *)name);
         }
     }
-    printf("insert ok \n");
     return 1;
 }
 
@@ -237,7 +234,6 @@ int CAN_Root_Process_Job(int root_rank, MPI_Comm comm, int nb_proc) {
             }
         }
     }
-    printf("inserts ok \n");
     return 1;
 }
 
@@ -374,9 +370,7 @@ int CAN_REQ_Root_init(MPI_Status *req_status, MPI_Comm comm, int com_rank, can_n
             req_status->MPI_TAG , comm, MPI_STATUS_IGNORE);
 
     if(rec_buffer_int[0] == 1) {
-    	printf("init land \n");
         init_land(&(node->land_id), 0, 0, SIZE_X, SIZE_Y);
-        printf("after iniut land \n");
         MPI_Send((&rec_buffer_int[0]) ,1 ,MPI_INT ,ROOT_PROCESS ,ACK_TAG_BOOTSTRAP ,comm);
     } else {
         rec_buffer_int[0] = com_rank;
@@ -407,9 +401,6 @@ void CAN_REQ_Rec_Neighbours(MPI_Status *req_status, MPI_Comm comm, int com_rank,
         CAN_Send_neighbour(&temp_voisin,UPDATE_NEIGBOUR, temp_voisin.com_rank, comm);
         MPI_Recv(&dummy, 1, MPI_INT,temp_voisin.com_rank, ACK, comm, &status);
     }
-    printf("[ %d ] voisins recu \n", com_rank);
-    list_apply(&(node->voisins), print_neighbour_cb);
-    printf("\n");
     MPI_Send((&dummy) ,1 ,MPI_INT ,ROOT_PROCESS ,ACK ,comm);
     *wait_for = MPI_ANY_SOURCE;
 }
@@ -445,7 +436,6 @@ void CAN_REQ_Send_Land_order(MPI_Status *req_status,const MPI_Comm comm,const ca
 	MPI_Get_count (req_status, MPI_INT, &count);
     MPI_Recv(&buffer_simple_int , count , MPI_INT, req_status->MPI_SOURCE, req_status->MPI_TAG, comm, MPI_STATUS_IGNORE);
     if(req_status->MPI_SOURCE == ROOT_PROCESS ) {
-        printf("recu SEND_LAND_ORDER \n");
         land_buffer[0] = node->land_id.x; land_buffer[1] = node->land_id.y; land_buffer[2] = node->land_id.size_x; land_buffer[3] = node->land_id.size_y;
         MPI_Send(&land_buffer[0], 4, MPI_UNSIGNED, req_status->MPI_SOURCE, ACK, MPI_COMM_WORLD);
     }
@@ -455,15 +445,9 @@ void CAN_REQ_Update_Neighbours(MPI_Status *req_status,const MPI_Comm comm,const 
 	neighbour temp_voisin;
     int dummy = 0;
     CAN_Receive_neighbour(&temp_voisin, req_status->MPI_TAG, req_status->MPI_SOURCE,comm);
-    printf("[ %d ] Mes amis je suis heureux de vous annoncer que nous acceuilons à présent un nouveau voisins [%d]! \n ", com_rank, req_status->MPI_SOURCE);
     temp_voisin.com_rank = req_status->MPI_SOURCE;
     update_neighbours(&(node->voisins), &(node->land_id) ,&temp_voisin);
     MPI_Send((&dummy) ,1 ,MPI_INT ,req_status->MPI_SOURCE, ACK ,comm);
-    printf("[ %d ] voisins recu \n", com_rank);
-    print_neighbour(&temp_voisin);
-    printf("\n");
-    list_apply(&(node->voisins), print_neighbour_cb);
-    printf("\n");
 }
 
 void CAN_REQ_Res_Request_to_join(MPI_Status *req_status,const MPI_Comm comm,const int com_rank ,can_node *node, int *wait_for) {
@@ -476,7 +460,6 @@ void CAN_REQ_Res_Request_to_join(MPI_Status *req_status,const MPI_Comm comm,cons
     MPI_Send(&(main_loop_buffer_int[0]),1 , MPI_INT , req_status->MPI_SOURCE , REQUEST_INIT_SPLIT,comm);
     MPI_Recv(&(land_buffer[0]), 4, MPI_UNSIGNED, req_status->MPI_SOURCE , REQUEST_RECEIVE_LAND, comm, &status);
     init_land(&(node->land_id), land_buffer[0], land_buffer[1] , land_buffer[2], land_buffer[3]);
-    print_land(&(node->land_id));
     (*wait_for) = req_status->MPI_SOURCE;
 }
 
@@ -503,7 +486,6 @@ void CAN_REQ_Request_init_split(MPI_Status *req_status, const MPI_Comm comm, con
     MPI_Send(&land_buffer[0], 4, MPI_UNSIGNED, req_status->MPI_SOURCE, REQUEST_RECEIVE_LAND, comm);
     CAN_Send_neighbour_list(&temp_voisins,RES_INIT_NEIGHBOUR , req_status->MPI_SOURCE, comm);
     list_clear(&temp_voisins, free_neighbour_cb);
-    printf("je suis %d , transaction fini avec %d \n",com_rank, *wait_for);
     (*wait_for) = MPI_ANY_SOURCE;
 }
 
@@ -518,9 +500,6 @@ int CAN_Node_Job(int com_rank, MPI_Comm comm) {
     init_can_node(&node);
 
     while(1) {
-        if(wait_for != -1) {
-            printf("je suis [%d] en attente d'un message de %d \n", com_rank, wait_for);
-        }
         MPI_Probe(wait_for, MPI_ANY_TAG, MPI_COMM_WORLD, &main_loop_status);
         main_loop_tag  = main_loop_status.MPI_TAG;
 
