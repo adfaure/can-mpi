@@ -3,14 +3,28 @@
 
 int main(int argc, char**argv) {
     const char str_debug[] = "debug";
+    const char str_seed[] = "seed";
+
     int com_rank, nb_proc;
     MPI_Init (&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &nb_proc);
     MPI_Comm_rank(MPI_COMM_WORLD, &com_rank);
-    srand(time(NULL) * com_rank * nb_proc);
+
+    int seed;
+    if (argc >= 3 && (strcmp(str_seed, argv[1]) == 0)) {
+        seed = atoi(argv[2]);
+    } else {
+        seed = time(NULL) + com_rank * nb_proc;
+    }
+    srand(seed);
+    printf("random seed = %d \n", seed);
+    fflush(stdout);
 
     if(com_rank == ROOT_PROCESS) {
-        if (argc == 2 && (strcmp(str_debug, argv[1]) == 0)) {
+        if (
+            (argc == 2 && (strcmp(str_debug, argv[1]) == 0)) ||
+            (argc == 4 && (strcmp(str_debug, argv[3]) == 0))
+        ) {
             prompt(ROOT_PROCESS, MPI_COMM_WORLD, nb_proc);
         } else {
             CAN_Root_Process_Job(ROOT_PROCESS, MPI_COMM_WORLD, nb_proc);
