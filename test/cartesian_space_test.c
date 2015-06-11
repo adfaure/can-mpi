@@ -625,23 +625,23 @@ void test_PROBLEME_2 (void) {
 
     list_add_front(&ns_5, &n_5_4);
 
-    printf("\n****Les frontières du land 2 (tout va bien): \n"); // je dis land 2 mais j'affiche land 5 mais c'est normal car je veux éviter de déclarer un land pour rien, mais c'est bon
-    list_apply(&ns_5, print_one_neighbour);
-    printf("\n");
-
-    printf("\n****Les frontières du land 4 (tout va bien): \n");
-    list_apply(&ns_4, print_one_neighbour);
-    printf("\n");
-
+    // printf("\n****Les frontières du land 2 (tout va bien): \n"); // je dis land 2 mais j'affiche land 5 mais c'est normal car je veux éviter de déclarer un land pour rien, mais c'est bon
+    // list_apply(&ns_5, print_one_neighbour);
+    // printf("\n");
+    //
+    // printf("\n****Les frontières du land 4 (tout va bien): \n");
+    // list_apply(&ns_4, print_one_neighbour);
+    // printf("\n");
+    //
     update_neighbours(&ns_4, &l_4, &n_5_4);
-
-    printf("\n****Les frontières du land 5 (apres update): \n");
-    list_apply(&ns_5, print_one_neighbour);
-    printf("\n");
-
-    printf("\n****Les frontières du land 4 (apres update): \n");
-    list_apply(&ns_4, print_one_neighbour);
-    printf("\n");
+    //
+    // printf("\n****Les frontières du land 5 (apres update): \n");
+    // list_apply(&ns_5, print_one_neighbour);
+    // printf("\n");
+    //
+    // printf("\n****Les frontières du land 4 (apres update): \n");
+    // list_apply(&ns_4, print_one_neighbour);
+    // printf("\n");
 
     // le land 4 devrait avoir 2 frontières, la nouvelle et l'ancienne non touchée !!!
     CU_ASSERT(ns_4.nb_elem == 2);

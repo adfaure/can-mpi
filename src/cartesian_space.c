@@ -271,9 +271,9 @@ int update_neighbours(list *l, const land*land, const neighbour *new_n) {
 int are_equals_neighbours(const neighbour*n1, const neighbour *n2) {
     int res = 0;
     if(n1->orientation == VOISIN_H && n1->orientation == n2->orientation) {
-        res = (n1->x == n2->x && n1->size == n2->size) && (n1->y !=  n2->y);
+        res = (n1->x == n2->x && n1->size == n2->size) && (n1->y ==  n2->y);
     } else if(n1->orientation == VOISIN_V && n1->orientation == n2->orientation) {
-        res = (n1->y == n2->y && n1->size == n2->size)  && (n1->x!=  n2->x);;
+        res = (n1->y == n2->y && n1->size == n2->size)  && (n1->x ==  n2->x);;
     }
     return res;
 }
