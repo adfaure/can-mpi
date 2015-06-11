@@ -37,12 +37,29 @@
 //root process
 #define ROOT_PROCESS 0
 
+/*
+ *
+ */
+typedef struct _can_node {
+	list voisins, data_storage;
+	land land_id;
+	pair pair_id;
+} can_node;
+
+/**
+ *
+ */
+void init_can_node(can_node *node);
 
 /**
  *
  */
 void CAN_Recv_localise(int *loc, const pair *_pair, int self_rank, int first_node, MPI_Comm comm);
 
+
+/**
+ *
+ */
 void CAN_Fetch_data(MPI_Comm comm, int com_rank, int first_rank ,const pair *pair, can_data * elem);
 
 /**
@@ -54,6 +71,10 @@ void CAN_Recv_localise_timeout(int *loc, const pair *pair, int self_rank, int fi
  * job for the root process
  */
 int CAN_Root_Process_Job(int root_rank, MPI_Comm comm,int nb_proc);
+
+/**
+ *
+ */
 int CAN_Root_Process_Job_Insert_One(int root_rank, MPI_Comm comm, int proc_to_insert, int nb_proc);
 
 /**
@@ -66,6 +87,9 @@ int CAN_Node_Job(int com_rank, MPI_Comm comm);
  */
 void CAN_Attach_new_data(int self_rank, int first_node, MPI_Comm comm, pair *_pair, void *data, int data_type, unsigned int data_size);
 
+/**
+ *
+ */
 void prompt(int root_rank, MPI_Comm comm, int nb_proc);
 
 #endif
