@@ -4,7 +4,6 @@
 #include "cartesian_space.h"
 #include "utils.h"
 
-
 // Communication tags
 #define ROOT_TAG_INIT_NODE   0
 #define GET_ENTRY_POINT      4

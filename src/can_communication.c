@@ -1,4 +1,5 @@
 #include "can_communication.h"
+#include <pthread.h>
 
 #define UNUSED(x) (void)(x)
 
@@ -504,68 +505,75 @@ int CAN_Node_Job(int com_rank, MPI_Comm comm) {
     can_node node;
     unsigned int main_loop_from;
     UNUSED(main_loop_from);
-    int main_loop_tag; // wait_array on attend un message d'une source avec un tag
+    int main_loop_tag, flag; // wait_array on attend un message d'une source avec un tag
     MPI_Status main_loop_status;
     int wait_for = MPI_ANY_SOURCE;
     init_can_node(&node);
+/*
+    int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag,
+                   MPI_Status *status)
+*/
     while(1) {
-        MPI_Probe(wait_for, MPI_ANY_TAG, MPI_COMM_WORLD, &main_loop_status);
-        main_loop_tag  = main_loop_status.MPI_TAG;
+    	pthread_yield();
+    	MPI_Iprobe(wait_for,MPI_ANY_TAG, MPI_COMM_WORLD,&flag , &main_loop_status);
+        if(flag) {
+			main_loop_tag  = main_loop_status.MPI_TAG;
 
-        if(main_loop_tag == ROOT_TAG_INIT_NODE) {
-        	//Reception de l'ordre d'insertion
-        	CAN_REQ_Root_init(&main_loop_status, comm, com_rank, &node);
-        }
+			if(main_loop_tag == ROOT_TAG_INIT_NODE) {
+				//Reception de l'ordre d'insertion
+				CAN_REQ_Root_init(&main_loop_status, comm, com_rank, &node);
+			}
 
-        else if(main_loop_tag == REQUEST_TO_JOIN) {
-        	//Reception d'une demande pour joindre le réseau
-        	//réponse possible :faire apsser ou accepter
-        	CAN_REQ_Request_to_join(&main_loop_status,comm,com_rank, &node ,&wait_for);
-        }
+			else if(main_loop_tag == REQUEST_TO_JOIN) {
+				//Reception d'une demande pour joindre le réseau
+				//réponse possible :faire apsser ou accepter
+				CAN_REQ_Request_to_join(&main_loop_status,comm,com_rank, &node ,&wait_for);
+			}
 
-        else if(main_loop_tag == SEND_LAND_ORDER) {
-        	//Reception d'une demande e journalisation de la zone par le proc 0
-        	CAN_REQ_Send_Land_order(&main_loop_status , comm, &node);
-        }
+			else if(main_loop_tag == SEND_LAND_ORDER) {
+				//Reception d'une demande e journalisation de la zone par le proc 0
+				CAN_REQ_Send_Land_order(&main_loop_status , comm, &node);
+			}
 
-        else if(main_loop_tag == RES_INIT_NEIGHBOUR) {
-        	//Reception des nouveau voisin
-        	CAN_REQ_Rec_Neighbours(&main_loop_status , comm, com_rank, &node, &wait_for);
-        }
+			else if(main_loop_tag == RES_INIT_NEIGHBOUR) {
+				//Reception des nouveau voisin
+				CAN_REQ_Rec_Neighbours(&main_loop_status , comm, com_rank, &node, &wait_for);
+			}
 
-        else if(main_loop_tag == UPDATE_NEIGBOUR) {
-        	//Receptiond un nouveau voisin
-        	CAN_REQ_Update_Neighbours(&main_loop_status  , comm, com_rank ,&node);
-        }
+			else if(main_loop_tag == UPDATE_NEIGBOUR) {
+				//Receptiond un nouveau voisin
+				CAN_REQ_Update_Neighbours(&main_loop_status  , comm, com_rank ,&node);
+			}
 
-        else if(main_loop_tag == RES_REQUEST_TO_JOIN) {
-        	//Apres un,e deamdne pour joindre le réseau, un noued répon positivement
-        	CAN_REQ_Res_Request_to_join(&main_loop_status, comm, com_rank , &node, &wait_for);
-        }
+			else if(main_loop_tag == RES_REQUEST_TO_JOIN) {
+				//Apres un,e deamdne pour joindre le réseau, un noued répon positivement
+				CAN_REQ_Res_Request_to_join(&main_loop_status, comm, com_rank , &node, &wait_for);
+			}
 
-        else if(main_loop_tag == SEND_NEIGBOUR_ORDER) {
-        	//Reception d'une demand de journalisation des voisisn du proc 0
-        	CAN_REQ_Send_Neighbour_order(&main_loop_status, comm, &node);
-        }
+			else if(main_loop_tag == SEND_NEIGBOUR_ORDER) {
+				//Reception d'une demand de journalisation des voisisn du proc 0
+				CAN_REQ_Send_Neighbour_order(&main_loop_status, comm, &node);
+			}
 
-        else if(main_loop_tag == REQUEST_INIT_SPLIT) {
-        	//Split la zone et répartie le voisins
-        	CAN_REQ_Request_init_split(&main_loop_status , comm, com_rank , &node, &wait_for);
-        }
+			else if(main_loop_tag == REQUEST_INIT_SPLIT) {
+				//Split la zone et répartie le voisins
+				CAN_REQ_Request_init_split(&main_loop_status , comm, com_rank , &node, &wait_for);
+			}
 
-        else if(main_loop_tag == ATTACH_NEW_DATA) {
-        	// traitement
-        	CAN_REQ_Attach_new_data(&main_loop_status , comm, com_rank ,&node);
-        }
+			else if(main_loop_tag == ATTACH_NEW_DATA) {
+				// traitement
+				CAN_REQ_Attach_new_data(&main_loop_status , comm, com_rank ,&node);
+			}
 
-        else if(main_loop_tag == FETCH_DATA) {
-        	// traitement
-        	//void CAN_REQ_Fetch_data(MPI_Status req_status ,MPI_Comm comm,int com_rank ,const land *land_id, const list * voisins) {
-        	CAN_REQ_Fetch_data(&main_loop_status , comm, com_rank ,&node);
-        }
+			else if(main_loop_tag == FETCH_DATA) {
+				// traitement
+				//void CAN_REQ_Fetch_data(MPI_Status req_status ,MPI_Comm comm,int com_rank ,const land *land_id, const list * voisins) {
+				CAN_REQ_Fetch_data(&main_loop_status , comm, com_rank ,&node);
+			}
 
-        else   {
-            printf("unknow tag \n");
+			else   {
+				printf("unknow tag \n");
+			}
         }
     }
     return 1;
