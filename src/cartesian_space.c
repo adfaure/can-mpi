@@ -499,25 +499,27 @@ bool is_land_contains_pair(const land *l, const pair *p) {
 }
 
 void split_land(land *new_land, land *old_land) {
-    unsigned int new_x,  new_y,  new_size_x,  new_size_y;
+    unsigned int new_x,  new_y,  new_size_x,  new_size_y, odd = 0;
     if(old_land->size_x >= old_land->size_y) {
     	if(old_land->size_x % 2 == 1) {
     		printf("split d'une zone paire \n");
+    		odd = 1;
     	}
         new_x = old_land->x + (old_land->size_x / 2);
         new_y = old_land->y;
-        new_size_y = old_land->size_y;
-        new_size_x = old_land->size_x / 2;
-        old_land->size_x = new_size_x ;
+        new_size_y = old_land->size_y ;
+        new_size_x = (old_land->size_x / 2) + odd;
+        old_land->size_x = new_size_x - odd;
     } else {
     	if(old_land->size_y % 2 == 1) {
     		printf("split d'une zone paire \n");
+    		odd = 1;
     	}
         new_x = old_land->x;
         new_y = old_land->y + (old_land->size_y / 2 );
-        new_size_y = (old_land->size_y / 2);
         new_size_x = old_land->size_x;
-        old_land->size_y = new_size_y;
+        new_size_y = (old_land->size_y / 2)  + odd;
+        old_land->size_y = new_size_y - odd;
     }
     init_land(new_land,  new_x,  new_y,  new_size_x,  new_size_y);
 }
