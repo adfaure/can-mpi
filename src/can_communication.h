@@ -37,7 +37,7 @@
 //root process
 #define ROOT_PROCESS 0
 
-/*
+/**
  *
  */
 typedef struct _can_node {
@@ -91,5 +91,7 @@ void CAN_Attach_new_data(int self_rank, int first_node, MPI_Comm comm, pair *_pa
  *
  */
 void prompt(int root_rank, MPI_Comm comm, int nb_proc);
+
+int put(int root_rank, MPI_Comm comm, int nb_proc);
 
 #endif

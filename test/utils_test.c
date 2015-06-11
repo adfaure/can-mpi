@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "CUnit/Basic.h"
 
+#include "../src/can_communication.h"
 #include "../src/utils.h"
 #include "../src/cartesian_space.h"
 
@@ -196,6 +197,53 @@ void test_LIST_REMOVE_INDEX(void) {
   CU_ASSERT(! list_get_index(&nghbrs, 0, &out));
 }
 
+void print_data_inner(const can_data * data) {
+    printf("%d\n", *((int*)data->data));
+}
+
+
+int test (const void * c, const void *params) {
+    chunk element = *(chunk *)c;
+    pair pa = *(pair*) params;
+    if (element.x == pa.x && element.y == pa.y) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void test_LIST_FIND (void) {
+    list l;
+    chunk c_1, c_2, c_3, c_out;
+    can_data data_1, data_2, data_3;
+    pair p;
+    int life_1 = 42;
+    int life_2 = 42 * 42;
+    int life_3 = 42 * 42 * 42;
+    init_pair(&p, 45 ,46);
+    init_data(&data_1, sizeof(int), DATA_INT, &life_1);
+    init_data(&data_2, sizeof(int), DATA_INT, &life_2);
+    init_data(&data_3, sizeof(int), DATA_INT, &life_3);
+
+    init_chunk(&c_1, 43, 44, &data_1);
+    init_chunk(&c_2, 45, 46, &data_2);
+    init_chunk(&c_3, 47, 48, &data_3);
+
+    init_list(&l, sizeof(chunk));
+
+    list_add_front(&l, &c_1);
+    list_add_front(&l, &c_2);
+    list_add_front(&l, &c_3);
+
+    printf("***************************************************************\n");
+    list_apply(&l, print_one_chunk);
+
+    list_find(&l,&p ,test, &c_out);
+
+    printf("***************************j'ai trouvé:*************************\n");
+    print_one_chunk(&c_out);
+}
+
 /* The main() function for setting up and running the tests.
  * Returns a CUE_SUCCESS on successful running, another
  * CUnit error code on failure.
@@ -224,7 +272,8 @@ int main()
      (NULL == CU_add_test(pSuite, "test of list_replace_index()", test_LIST_REPLACE_INDEX)) ||
      (NULL == CU_add_test(pSuite, "test of list_remove_front()", test_LIST_REMOVE_FRONT)) ||
      (NULL == CU_add_test(pSuite, "test of list_remove_index() version moins simple", test_LIST_REMOVE_INDEX)) ||
-     (NULL == CU_add_test(pSuite, "test of list_remove_index() version simple", test_LIST_REMOVE_INDEX_simple))
+     (NULL == CU_add_test(pSuite, "test of list_remove_index() version simple", test_LIST_REMOVE_INDEX_simple)) ||
+     (NULL == CU_add_test(pSuite, "test of list_find", test_LIST_FIND))
 
      ) {
       CU_cleanup_registry();

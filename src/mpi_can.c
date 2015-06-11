@@ -1,7 +1,7 @@
 #include "mpi_can.h"
 #include "can_communication.h"
 
-int main(int argc, char**argv) {
+int main (int argc, char ** argv) {
     const char str_debug[] = "debug";
     const char str_seed[]  = "seed";
     int com_rank, nb_proc;

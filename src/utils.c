@@ -20,7 +20,6 @@ double entire_dist_betwen_points(int x1, int y1, int x2, int y2) {
     return sqrt(pow((double)(x2 - x1), 2) + pow((double)(y2 - y1),2 ));
 }
 
-
 float **alloc_2d_float(int rows, int cols) {
     float *data = (float *)malloc(rows*cols*sizeof(float));
     float **array= (float **)malloc(rows*sizeof(float*));
@@ -188,11 +187,38 @@ int land_storage_fetch_data(const land_storage *ls, unsigned int x, unsigned int
 	return 1;
 }
 
-void init_data(can_data *data, unsigned int data_size, unsigned int data_type,const void *elem) {
+void init_data(can_data *data, unsigned int data_size, unsigned int data_type, const void *elem) {
 	data->data_type = data_type;
 	data->element_size = data_size;
 	data->data = malloc(data_size);
 	memcpy(data->data, elem, data_size);
+}
+
+void init_chunk(chunk * chunk, unsigned int x, unsigned int y, const can_data * data_wrapper) {
+    chunk->x = x;
+    chunk->y = y;
+    memcpy(&chunk->data_wrapper, data_wrapper, sizeof(can_data));
+}
+
+void print_one_chunk(void * c) {
+    chunk c_ = *(chunk*)c;
+    int test = *(int *) c_.data_wrapper.data;
+    printf("\n{x:%d, y:%d, data_inner:%d, size : %d , type %d } \n", c_.x, c_.y, test, c_.data_wrapper.element_size, c_.data_wrapper.data_type);
+}
+
+
+void get_data(const chunk * chunk, can_data * data_wrapper) {
+	memcpy(data_wrapper, &(chunk->data_wrapper), sizeof(can_data));
+}
+
+int list_find(const list * l,const void* params, int(*cb)(const void *elem, const void*params), void *found) {
+    for (unsigned int i = 0; i < (unsigned int)l->nb_elem; ++i) {
+        list_get_index(l, i, found);
+        if (cb(found, params)) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 void free_can_data_(can_data *data) {
