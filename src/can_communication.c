@@ -1,4 +1,5 @@
 #include "can_communication.h"
+#include <unistd.h>
 
 #define UNUSED(x) (void)(x)
 
@@ -137,13 +138,18 @@ void prompt(int root_rank, MPI_Comm comm, int nb_proc) {
     const char str_insert[] = "insert";
     const char str_all[] = "insert all";
     const char str_status[] = "status";
+	const char str_log[] = "log";
+	unsigned int i = 1;
+
     bool * nodes_inserted = (bool *) malloc(sizeof(bool) * nb_proc);
     nodes_init(nodes_inserted, nb_proc);
 
+	usleep(500000);
     printf("\n-- %d nodes availables --\n", nb_proc - 1);
-    printf("> status   \t show log about the state of the DHT\n");
-    printf("> insert 2 \t insert the node 2 in the overlay\n");
+    printf("> status     \t show log about the state of the DHT\n");
+    printf("> insert 2   \t insert the node 2 in the overlay\n");
     printf("> insert all \t insert all nodes in the overlay\n");
+	printf("> log        \t add a textual/SVG log on logs/ directory\n");
     printf("\n");
 
     while (1) {
@@ -171,7 +177,7 @@ void prompt(int root_rank, MPI_Comm comm, int nb_proc) {
             char *useless;
             int node_to_insert = (int)strtol(number, &useless, 10);
             printf("inserting node: %d\n", node_to_insert);
-            if(CAN_Root_Process_Job_Insert_One(root_rank, comm, node_to_insert, nb_proc)) {
+            if(CAN_Root_Process_Job_Insert_One(root_rank, comm, node_to_insert)) {
                 nodes_set(nodes_inserted, nb_proc, node_to_insert);
             }
         }
@@ -180,6 +186,13 @@ void prompt(int root_rank, MPI_Comm comm, int nb_proc) {
             fflush(stdout);
             nodes_print_not_inserted(nodes_inserted, nb_proc);
         }
+		else if (strcmp(str_log, user_cmd) == 0) {
+			printf("---log: %s\n", user_cmd);
+			const char* base_path = "logs/log_in_process";
+			const char* name[MAX_SIZE_BUFFER];
+			sprintf((char *)name, "%s_%d", base_path, i++);
+			CAN_Log_informations(comm, root_rank, nb_proc, (char *)name);
+		}
         else {
             printf("invalid command\n");
             fflush(stdout);
@@ -187,7 +200,7 @@ void prompt(int root_rank, MPI_Comm comm, int nb_proc) {
     }
 }
 
-int CAN_Root_Process_Job_Insert_One(int root_rank, MPI_Comm comm, int proc_to_insert, int nb_proc) {
+int CAN_Root_Process_Job_Insert_One(int root_rank, MPI_Comm comm, int proc_to_insert) {
 
     MPI_Status main_loop_status;
     int main_loop_tag, main_loop_buffer_int[MAX_SIZE_BUFFER]; // wait_array on attend un message d'une source avec un tag
@@ -205,7 +218,6 @@ int CAN_Root_Process_Job_Insert_One(int root_rank, MPI_Comm comm, int proc_to_in
             MPI_Send(&main_loop_buffer_int[0] ,1 , MPI_INT, proc_to_insert, SEND_ENTRY_POINT, comm);
             MPI_Recv(&main_loop_buffer_int[0] ,1 , MPI_INT, proc_to_insert, ACK, comm, &main_loop_status); // le noeud i a été inséré
             sprintf((char *)name, "%s_%d", base_path, proc_to_insert);
-            CAN_Log_informations(comm, root_rank, nb_proc, (char *)name);
         }
     }
     return 1;
@@ -342,7 +354,7 @@ void CAN_REQ_Fetch_data(MPI_Status *req_status, MPI_Comm comm, int com_rank, con
     MPI_Recv(&buffer_int[0] ,count, MPI_INT, from, tag, comm, req_status);
     init_pair(&rec_pair, buffer_int[1], buffer_int[2]);
     if(is_land_contains_pair(&(node->land_id), &rec_pair)) {
-		
+
     	if(list_find(&(node->data_storage), &rec_pair, list_find_paire_equals_cb, &temp_chunk)) {
     		get_data(&temp_chunk , &moc);
     	} else {
@@ -508,6 +520,7 @@ int CAN_Node_Job(int com_rank, MPI_Comm comm) {
     int wait_for = MPI_ANY_SOURCE;
     init_can_node(&node);
     while(1) {
+		usleep(100000);
         MPI_Probe(wait_for, MPI_ANY_TAG, MPI_COMM_WORLD, &main_loop_status);
         main_loop_tag  = main_loop_status.MPI_TAG;
 

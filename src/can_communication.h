@@ -75,7 +75,7 @@ int CAN_Root_Process_Job(int root_rank, MPI_Comm comm,int nb_proc);
 /**
  *
  */
-int CAN_Root_Process_Job_Insert_One(int root_rank, MPI_Comm comm, int proc_to_insert, int nb_proc);
+int CAN_Root_Process_Job_Insert_One(int root_rank, MPI_Comm comm, int proc_to_insert);
 
 /**
  * job nodes

@@ -37,3 +37,11 @@ mpirun -np 7 ./mpi_can seed 42 debug
 ```
 mpirun -np 7 ./mpi_can seed 42
 ```
+
+# Prompt:
+```
+> status     : show log about the state of the DHT
+> insert 2   : insert the node 2 in the overlay
+> insert all : insert all nodes in the overlay
+> log        : add a textual/SVG log on logs/ directory
+```
