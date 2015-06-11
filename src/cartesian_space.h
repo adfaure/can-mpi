@@ -177,7 +177,7 @@ void print_neighbour(const neighbour *n);
  * @param res
  * @return
  */
-int find_neighbour(const list *l, const pair *pair, neighbour *res );
+int find_neighbour(const land *land, const list *l, const pair *pair, neighbour *res );
 
 /**
  * @brief Remplit le buffer avec les valeurs de la liste

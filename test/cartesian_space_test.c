@@ -91,6 +91,7 @@ void test_IS_LAND_CONTAINS_PAIR(void) {
   CU_ASSERT(!is_land_contains_pair(&l, &p));
   p.x = 0; p.y = 500;
   CU_ASSERT(!is_land_contains_pair(&l, &p));
+
 }
 
 void test_SPLIT_LAND(void) {

@@ -208,6 +208,7 @@ int CAN_Root_Process_Job_Insert_One(int root_rank, MPI_Comm comm, int proc_to_in
             CAN_Log_informations(comm, root_rank, nb_proc, (char *)name);
         }
     }
+
     return 1;
 }
 
@@ -295,7 +296,7 @@ void CAN_REQ_Attach_new_data(MPI_Status *req_status, MPI_Comm comm , const int c
     	free(data);
         return;
     } else {
-        if(find_neighbour(&(node->voisins), &rec_pair, &neighbour_temp_find)) {
+        if(find_neighbour(&(node->land_id), &(node->voisins), &rec_pair, &neighbour_temp_find)) {
         	MPI_Send(&buffer_char[0], count, MPI_CHAR, neighbour_temp_find.com_rank, tag,  comm);
         	printf("[ %d ] --> [ %d ] ", com_rank, neighbour_temp_find.com_rank);
         	print_pair(&rec_pair);
@@ -350,7 +351,7 @@ void CAN_REQ_Fetch_data(MPI_Status *req_status ,MPI_Comm comm,int com_rank ,cons
         free_can_data_(&moc);
         return;
     } else {
-        if(find_neighbour(&(node->voisins), &rec_pair, &neighbour_temp_find)) {
+        if(find_neighbour(&(node->land_id), &(node->voisins), &rec_pair, &neighbour_temp_find)) {
         	MPI_Send(&buffer_int[0], count, MPI_INT, neighbour_temp_find.com_rank, tag,  comm);
         	printf("[ %d ] --> [ %d ] ", com_rank, neighbour_temp_find.com_rank);
         	print_pair(&rec_pair);
@@ -383,6 +384,7 @@ int CAN_REQ_Root_init(MPI_Status *req_status, MPI_Comm comm, int com_rank, can_n
 }
 
 void CAN_REQ_Rec_Neighbours(MPI_Status *req_status, MPI_Comm comm, int com_rank, can_node *node , int *wait_for) {
+	UNUSED(com_rank);
     int nb_voisins, idx = 0, count, dummy = 0;
     unsigned int buffer_ui[MAX_SIZE_BUFFER];
     MPI_Status status;
@@ -419,10 +421,10 @@ int CAN_REQ_Request_to_join(MPI_Status *req_status,const MPI_Comm comm,const int
         (*wait_for) = buffer_int[0];
         return 1;
     } else {
-        if(find_neighbour(&(node->voisins), &rec_pair, &neighbour_temp_find)) {
+        if(find_neighbour(&(node->land_id), &(node->voisins), &rec_pair, &neighbour_temp_find)) {
             MPI_Send(&buffer_int[0], 3, MPI_INT, neighbour_temp_find.com_rank, REQUEST_TO_JOIN,  comm);
-       // 	printf("[ %d ] --> [ %d ] ", com_rank, neighbour_temp_find.com_rank);
-       //      print_pair(&rec_pair);
+          printf("[ %d ] --> [ %d ] ", com_rank, neighbour_temp_find.com_rank);
+      	    print_pair(&rec_pair);
         } else {
             printf("ERROR lors de la recherche de voisins \n");
         }
@@ -442,6 +444,7 @@ void CAN_REQ_Send_Land_order(MPI_Status *req_status,const MPI_Comm comm,const ca
 }
 
 void CAN_REQ_Update_Neighbours(MPI_Status *req_status,const MPI_Comm comm,const int com_rank ,can_node *node ) {
+	UNUSED(com_rank);
 	neighbour temp_voisin;
     int dummy = 0;
     CAN_Receive_neighbour(&temp_voisin, req_status->MPI_TAG, req_status->MPI_SOURCE,comm);

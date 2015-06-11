@@ -3,7 +3,7 @@
 
 int main(int argc, char**argv) {
     const char str_debug[] = "debug";
-    const char str_seed[] = "seed";
+    const char str_seed[]  = "seed";
 
     int com_rank, nb_proc;
     MPI_Init (&argc, &argv);
@@ -14,8 +14,9 @@ int main(int argc, char**argv) {
     if (argc >= 3 && (strcmp(str_seed, argv[1]) == 0)) {
         seed = atoi(argv[2]);
     } else {
-        seed = time(NULL) + com_rank * nb_proc;
+        seed = time(NULL);
     }
+    seed = seed  * (com_rank + 1) * nb_proc;
     srand(seed);
     printf("[ %d ]random seed = %d \n",com_rank, seed);
     fflush(stdout);
@@ -35,5 +36,6 @@ int main(int argc, char**argv) {
     }
 
     MPI_Finalize();
+
     return 0;
 }

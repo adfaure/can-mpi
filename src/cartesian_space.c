@@ -122,21 +122,91 @@ void land_extract_neighbourg_after_split(land *land1,  land * land2,  neighbour 
     }
 }
 
-int find_neighbour(const list *l, const pair *pair, neighbour *res) {
+int is_point_on_left(const land *l, const pair *p) {
+	return (p->x  < l->x);
+}
+
+int is_point_on_right(const land *l, const pair *p) {
+	return (p->x  >= l->x + l->size_x);
+}
+
+int is_point_on_top(const land *l, const pair *p) {
+	return (p->y  < l->y);
+}
+
+int is_point_on_bot(const land *l, const pair *p) {
+	return (p->y >= l->size_y + l->y);
+}
+
+int find_neighbour(const land *land, const list *l, const pair *pair, neighbour *res) {
     neighbour temp;
-    int better;
+    int better, azimut;
     double min, val_temp;
+
     if(l->nb_elem == 0) {
         return 0;
     }
-    min = 10000000; better = 0;
-    for(int i = 0 ; i < l->nb_elem; i++) {
-        list_get_index(l,  i,  &temp);
-        val_temp = entire_dist_neigbourg(pair->x,  pair->y,  &temp);
-        if(val_temp < min) {
-            min = val_temp;
-            better = i;
-        }
+
+    min = 10000000; better = 0; azimut = 0;
+    if(is_point_on_bot(land, pair)) {
+    	azimut += 1;
+    }  if(is_point_on_top(land, pair)) {
+    	azimut += 2;
+    }  if(is_point_on_left(land, pair)) {
+    	azimut += 4;
+    }  if(is_point_on_right(land, pair)) {
+    	azimut += 8;
+    }
+
+    if(azimut == 1) {
+    	for(int i = 0 ; i < l->nb_elem; i++) {
+        	list_get_index(l,  i,  &temp);
+        	if(!is_neighbour_bot(land, &temp)) continue;
+        	val_temp = entire_dist_neigbourg(pair->x,  pair->y,  &temp);
+        	if(val_temp < min) {
+            	min = val_temp;
+            	better = i;
+        	}
+    	}
+    } else if( azimut == 2 ) {
+    	for(int i = 0 ; i < l->nb_elem; i++) {
+        	list_get_index(l,  i,  &temp);
+        	if(!is_neighbour_top(land, &temp)) continue;
+        	val_temp = entire_dist_neigbourg(pair->x,  pair->y,  &temp);
+        	if(val_temp < min) {
+            	min = val_temp;
+            	better = i;
+        	}
+    	}
+    } else if(azimut == 4) {
+    	for(int i = 0 ; i < l->nb_elem; i++) {
+        	list_get_index(l,  i,  &temp);
+        	if(!is_neighbour_left(land, &temp)) continue;
+        	val_temp = entire_dist_neigbourg(pair->x,  pair->y,  &temp);
+        	if(val_temp < min) {
+            	min = val_temp;
+            	better = i;
+        	}
+    	}
+    }  else if (azimut == 8) {
+    	for(int i = 0 ; i < l->nb_elem; i++) {
+        	list_get_index(l,  i,  &temp);
+        	if(!is_neighbour_right(land, &temp)) continue;
+        	val_temp = entire_dist_neigbourg(pair->x,  pair->y,  &temp);
+        	if(val_temp < min) {
+            	min = val_temp;
+            	better = i;
+        	}
+    	}
+    } else {
+    	for(int i = 0 ; i < l->nb_elem; i++) {
+        	list_get_index(l,  i,  &temp);
+        	val_temp = entire_dist_neigbourg(pair->x,  pair->y,  &temp);
+        	if(val_temp < min) {
+            	min = val_temp;
+            	better = i;
+        	}
+    	}
     }
     list_get_index(l,  better,  res);
     return 1;
@@ -420,7 +490,8 @@ void free_land_cb(void *land_) {
 }
 
 bool is_land_contains(const land *l, unsigned int x, unsigned int y) {
-    return ((l->x <= x && l->x + l->size_x > x) && (l->y <= y && l->y + l->size_y > y));
+
+	return ((l->x <= x && l->x + l->size_x > x) && (l->y <= y && l->y + l->size_y > y));
 }
 
 bool is_land_contains_pair(const land *l, const pair *p) {
@@ -430,12 +501,18 @@ bool is_land_contains_pair(const land *l, const pair *p) {
 void split_land(land *new_land, land *old_land) {
     unsigned int new_x,  new_y,  new_size_x,  new_size_y;
     if(old_land->size_x >= old_land->size_y) {
+    	if(old_land->size_x % 2 == 1) {
+    		printf("split d'une zone paire \n");
+    	}
         new_x = old_land->x + (old_land->size_x / 2);
         new_y = old_land->y;
         new_size_y = old_land->size_y;
         new_size_x = old_land->size_x / 2;
         old_land->size_x = new_size_x ;
     } else {
+    	if(old_land->size_y % 2 == 1) {
+    		printf("split d'une zone paire \n");
+    	}
         new_x = old_land->x;
         new_y = old_land->y + (old_land->size_y / 2 );
         new_size_y = (old_land->size_y / 2);
@@ -473,7 +550,7 @@ void log_factory(FILE *f,  const void *data,  int CODE,  int from) {
 }
 
 void create_svg_logs(const char* path,const int size_x, const int size_y ,const list *list_lands) {
-
+	int mult = 4;
     FILE *f = fopen(path, "w+");
     if(!f) {
         fprintf(stderr, "erreur lors de l'ouverture du fichier : %s", path);
@@ -483,18 +560,18 @@ void create_svg_logs(const char* path,const int size_x, const int size_y ,const 
     int text_size_x, text_size_y;
     unsigned long color =  color_max / list_lands->nb_elem;
     fprintf(f, "<?xml version=\"1.0\" encoding=\"utf-8\"?> \n");
-    fprintf(f, "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\"%d\" height=\"%d\"> \n", size_x, size_y);
+    fprintf(f, "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\"%d\" height=\"%d\"> \n", size_x * mult, size_y * mult);
 
     for(int i = 0 ; i < list_lands->nb_elem; i++) {
         list_get_index(list_lands, i, &temp_land);
-        fprintf(f, " <rect width=\"%u\" height=\"%u\" x=\"%u\" y=\"%u\" fill=\"#%X\" /> \n", temp_land.size_x, temp_land.size_y, temp_land.x, temp_land.y, (unsigned int)((i + 1) * color));
+        fprintf(f, " <rect width=\"%u\" height=\"%u\" x=\"%u\" y=\"%u\" fill=\"#%X\" /> \n", temp_land.size_x * mult, temp_land.size_y * mult, temp_land.x * mult, temp_land.y * mult, (unsigned int)((i + 1) * color));
     }
 
     for(int i = 0 ; i < list_lands->nb_elem; i++) {
         list_get_index(list_lands, i, &temp_land);
         text_size_x =  temp_land.x + (temp_land.size_x/2) ;
         text_size_y =  temp_land.y + (temp_land.size_y/2);
-        fprintf(f, "<text style=\" font-size  : 24; font-weight: bold;\" x=\"%d\" y=\"%d\" fill=\"#%x\"  font-weight=\"900\" >", text_size_x, text_size_y , (unsigned int)~((i + 1) * color ));
+        fprintf(f, "<text style=\" font-size  : %d; font-weight: bold;\" x=\"%d\" y=\"%d\" fill=\"#%x\"  font-weight=\"900\" >",mult * 24 ,text_size_x * mult , text_size_y * mult, (unsigned int)~((i + 1) * color ));
         fprintf(f, "%d", (list_lands->nb_elem - i));
         fprintf(f, "</text>\n");
     }
