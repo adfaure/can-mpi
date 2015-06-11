@@ -140,6 +140,7 @@ void prompt(int root_rank, MPI_Comm comm, int nb_proc) {
     const char str_status[] = "status";
 	const char str_log[] = "log";
 	const char str_put[] = "put";
+	const char str_get[] = "get";
 	unsigned int i = 1;
 
     bool * nodes_inserted = (bool *) malloc(sizeof(bool) * nb_proc);
@@ -151,7 +152,8 @@ void prompt(int root_rank, MPI_Comm comm, int nb_proc) {
     printf("> insert 2           : insert the node 2 in the overlay\n");
     printf("> insert all         : insert all nodes in the overlay\n");
 	printf("> log                : add a textual/SVG log on logs/ directory\n");
-	printf("> put <x> <y> <data> : add a textual/SVG log on logs/ directory\n");
+	printf("> put <x> <y> <data> : put <data> in position (x, y)\n");
+	printf("> get <x> <y>        : get a data from position (x, y)\n");
     printf("\n");
 
     while (1) {
@@ -196,16 +198,16 @@ void prompt(int root_rank, MPI_Comm comm, int nb_proc) {
 		}
 		else if (strncmp(str_put, user_cmd, 3) == 0) {
             printf("---put: %s\n", user_cmd);
-			// char number[MAX_LEN];
-            // for (unsigned int j = 3; j < MAX_LEN-3; ++j) {
-            //     number[j - 3] = user_cmd[j];
-            // }
-            // char *useless;
-            // int node_to_insert = (int)strtol(number, &useless, 10);
 			int x, y, data;
 			sscanf (user_cmd, "put %d %d %d", &x, &y, &data);
-			DHT_put(root_rank, comm, nb_proc, x, y, data);
+			DHT_put(root_rank, comm, x, y, data);
         }
+		else if (strncmp(str_get, user_cmd, 3) == 0) {
+			printf("---get: %s\n", user_cmd);
+			int x, y;
+			sscanf (user_cmd, "get %d %d", &x, &y);
+			DHT_get(comm, root_rank, x, y);
+		}
         else {
             printf("invalid command\n");
             fflush(stdout);
@@ -259,19 +261,25 @@ int CAN_Root_Process_Job(int root_rank, MPI_Comm comm, int nb_proc) {
             }
         }
     }
-    DHT_put(ROOT_PROCESS, MPI_COMM_WORLD, nb_proc, 550, 300, 42);
+    DHT_put(ROOT_PROCESS, MPI_COMM_WORLD, 550, 300, 42);
     return 1;
 }
 
-int DHT_put(int root_rank, MPI_Comm comm, int nb_proc, unsigned int x, unsigned int y, int data) {
-    pair test;
-    can_data s_data;
-    init_pair(&test, x, y);
-    CAN_Attach_new_data(root_rank, 1, comm, &test, &data, DATA_INT , sizeof(int));
-    CAN_Fetch_data(comm, root_rank, 1,  &test, &s_data);
-    CAN_Log_informations(comm, root_rank, nb_proc, "logs/end_log");
-    printf("PUT DONE , %d \n", *((int*)s_data.data));
+int DHT_put(int root_rank, MPI_Comm comm, unsigned int x, unsigned int y, int data) {
+    pair p;
+    init_pair(&p, x, y);
+    CAN_Attach_new_data(root_rank, 1, comm, &p, &data, DATA_INT , sizeof(int));
+    //CAN_Log_informations(comm, root_rank, nb_proc, "logs/end_log");
     return 1;
+}
+
+int DHT_get(MPI_Comm comm, int root_rank, int x, int y) {
+	pair p;
+	can_data s_data;
+	init_pair(&p, x, y);
+	CAN_Fetch_data(comm, root_rank, 1, &p, &s_data);
+	printf("I found value: %d in position(%d, %d)\n", *((int*)s_data.data), x, y);
+	return 1;
 }
 
 void CAN_Attach_new_data(int self_rank, int first_node, MPI_Comm comm, pair *_pair, void *data, int data_type, unsigned int data_size) {
