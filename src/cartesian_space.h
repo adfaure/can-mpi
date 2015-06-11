@@ -323,6 +323,11 @@ void free_land(land *l);
 void print_land(const land *l);
 
 /**
+ *
+ */
+int list_find_paire_equals_cb(const void * c, const void *params);
+
+/**
  * @brief log_factory  Journalise dans un fichier de log
  * @param f
  * @param data

@@ -1,6 +1,5 @@
 #include "mpi_can.h"
 #include "can_communication.h"
-#include "map_simple.h"
 
 int main (int argc, char ** argv) {
     const char str_debug[] = "debug";
@@ -30,7 +29,6 @@ int main (int argc, char ** argv) {
         } else {
             CAN_Root_Process_Job(ROOT_PROCESS, MPI_COMM_WORLD, nb_proc);
             printf("insert ok \n");
-            put(ROOT_PROCESS, MPI_COMM_WORLD, nb_proc);
         }
     } else {
         CAN_Node_Job(com_rank, MPI_COMM_WORLD);

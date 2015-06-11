@@ -201,16 +201,11 @@ void print_data_inner(const can_data * data) {
     printf("%d\n", *((int*)data->data));
 }
 
-void print_one_chunk(void * c) {
-    chunk c_ = *(chunk*)c;
-    int test = *(int *) c_.data_wrapper.data;
-    printf("\n{x:%d, y:%d, data_inner:%d}\n", c_.x, c_.y, test);
-}
 
-int test (const void * c) {
+int test (const void * c, const void *params) {
     chunk element = *(chunk *)c;
-
-    if (element.x == 45 && element.y == 46) {
+    pair pa = *(pair*) params;
+    if (element.x == pa.x && element.y == pa.y) {
         return true;
     } else {
         return false;
@@ -221,10 +216,11 @@ void test_LIST_FIND (void) {
     list l;
     chunk c_1, c_2, c_3, c_out;
     can_data data_1, data_2, data_3;
+    pair p;
     int life_1 = 42;
     int life_2 = 42 * 42;
     int life_3 = 42 * 42 * 42;
-
+    init_pair(&p, 45 ,46);
     init_data(&data_1, sizeof(int), DATA_INT, &life_1);
     init_data(&data_2, sizeof(int), DATA_INT, &life_2);
     init_data(&data_3, sizeof(int), DATA_INT, &life_3);
@@ -242,7 +238,7 @@ void test_LIST_FIND (void) {
     printf("***************************************************************\n");
     list_apply(&l, print_one_chunk);
 
-    list_find(&l, test, &c_out);
+    list_find(&l,&p ,test, &c_out);
 
     printf("***************************j'ai trouvé:*************************\n");
     print_one_chunk(&c_out);

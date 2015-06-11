@@ -200,11 +200,21 @@ void init_chunk(chunk * chunk, unsigned int x, unsigned int y, const can_data * 
     memcpy(&chunk->data_wrapper, data_wrapper, sizeof(can_data));
 }
 
-int list_find(const list * l, int(*cb)(const void *), chunk * found) {
+void print_one_chunk(void * c) {
+    chunk c_ = *(chunk*)c;
+    int test = *(int *) c_.data_wrapper.data;
+    printf("\n{x:%d, y:%d, data_inner:%d, size : %d , type %d } \n", c_.x, c_.y, test, c_.data_wrapper.element_size, c_.data_wrapper.data_type);
+}
+
+
+void get_data(const chunk * chunk, can_data * data_wrapper) {
+	memcpy(data_wrapper, &(chunk->data_wrapper), sizeof(can_data));
+}
+
+int list_find(const list * l,const void* params, int(*cb)(const void *elem, const void*params), void *found) {
     for (unsigned int i = 0; i < (unsigned int)l->nb_elem; ++i) {
         list_get_index(l, i, found);
-        if (cb(found)) {
-            printf("OKOK\n");
+        if (cb(found, params)) {
             return 1;
         }
     }

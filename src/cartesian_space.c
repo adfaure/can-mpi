@@ -2,6 +2,17 @@
 
 #define UNUSED(x) (void)(x)
 
+
+int list_find_paire_equals_cb(const void * c, const void *params) {
+    chunk element = *(chunk *)c;
+    pair p = *(pair*) params;
+    if (element.x == p.x && element.y == p.y) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
 int CAN_Send_neighbour(const neighbour *neig, int mpi_tag, int mpi_destinataire,  MPI_Comm comm) {
     unsigned int buffer[5],  size = (int) (sizeof(neighbour) / sizeof(unsigned int));
     buffer[0] = neig->x;

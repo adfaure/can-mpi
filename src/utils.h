@@ -75,10 +75,21 @@ typedef struct _chunk {
 void init_chunk(chunk * chunk, unsigned int x, unsigned int y, const can_data * data_wrapper);
 
 /**
+ *
+ */
+void get_data( const chunk * chunk,can_data * data_wrapper);
+
+/**
+ *
+ */
+void print_one_chunk(void * c);
+
+
+/**
  * Place dans found le premier élement de la liste l pour lequel le calback cb retourne vrai
  *  Remarque: si aucun élément ne match, alors found contiendra le dernier element de la liste
  */
- int list_find(const list * l, int(*cb)(const void *), chunk * found);
+int list_find(const list * l,const void* params, int(*cb)(const void *elem, const void*params), void * found);
 
 /**
  *
