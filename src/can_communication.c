@@ -139,6 +139,7 @@ void prompt(int root_rank, MPI_Comm comm, int nb_proc) {
     const char str_all[] = "insert all";
     const char str_status[] = "status";
 	const char str_log[] = "log";
+	const char str_put[] = "put";
 	unsigned int i = 1;
 
     bool * nodes_inserted = (bool *) malloc(sizeof(bool) * nb_proc);
@@ -146,10 +147,11 @@ void prompt(int root_rank, MPI_Comm comm, int nb_proc) {
 
 	usleep(500000);
     printf("\n-- %d nodes availables --\n", nb_proc - 1);
-    printf("> status     \t show log about the state of the DHT\n");
-    printf("> insert 2   \t insert the node 2 in the overlay\n");
-    printf("> insert all \t insert all nodes in the overlay\n");
-	printf("> log        \t add a textual/SVG log on logs/ directory\n");
+    printf("> status             : show log about the state of the DHT\n");
+    printf("> insert 2           : insert the node 2 in the overlay\n");
+    printf("> insert all         : insert all nodes in the overlay\n");
+	printf("> log                : add a textual/SVG log on logs/ directory\n");
+	printf("> put <x> <y> <data> : add a textual/SVG log on logs/ directory\n");
     printf("\n");
 
     while (1) {
