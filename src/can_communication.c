@@ -249,7 +249,7 @@ int put(int root_rank, MPI_Comm comm, int nb_proc) {
     return 1;
 }
 
-void CAN_Attach_new_data(int self_rank, int first_node, MPI_Comm comm, pair *_pair, void *data,int data_type, unsigned int data_size) {
+void CAN_Attach_new_data(int self_rank, int first_node, MPI_Comm comm, pair *_pair, void *data, int data_type, unsigned int data_size) {
     MPI_Status status;
     unsigned int total_size = 0;
     char *buffer = (char*) malloc((sizeof(int) * 4) + (sizeof(char) * data_size )), res;
@@ -266,7 +266,6 @@ void CAN_Attach_new_data(int self_rank, int first_node, MPI_Comm comm, pair *_pa
     MPI_Recv(&res, 1,  MPI_INT,  MPI_ANY_SOURCE,  ACK,  comm,  &status);
     free(buffer);
 }
-
 
 void CAN_REQ_Attach_new_data(MPI_Status *req_status, MPI_Comm comm , const int com_rank , can_node *node) {
 	int buffer_int[MAX_SIZE_BUFFER], count, useless = 0;
@@ -291,6 +290,16 @@ void CAN_REQ_Attach_new_data(MPI_Status *req_status, MPI_Comm comm , const int c
     	data = malloc(sizeof(buffer_int[3]));
     	init_data(&temp_data, buffer_int[3],  buffer_int[4], &buffer_char[5* sizeof(unsigned int)]);
     	printf("[ %d ] i'll store it, no worries :  %d \n", com_rank, *((int*)&buffer_char[5* sizeof(unsigned int)]));
+		chunk c_1;
+		can_data can_data_1;
+		int d = *((int*)&buffer_char[5* sizeof(unsigned int)]);
+		unsigned int x = buffer_int[1];
+		unsigned int y = buffer_int[2];
+
+		init_data(&can_data_1, sizeof(int), DATA_INT, &d);
+		init_chunk(&c_1, x, y, &can_data_1);
+		list_add_front(&node->data_storage, &c_1);
+
     	MPI_Send(&useless, 1, MPI_INT, buffer_int[0], ACK, comm);
     	free(data);
         return;
@@ -324,7 +333,7 @@ void CAN_Fetch_data(MPI_Comm comm, int com_rank, int first_rank ,const pair *pai
     init_data(elem, buffer_int[0], buffer_int[1], &buffer_char[2 *  sizeof(unsigned int)]);
 }
 
-void CAN_REQ_Fetch_data(MPI_Status *req_status ,MPI_Comm comm,int com_rank ,const can_node *node) {
+void CAN_REQ_Fetch_data(MPI_Status *req_status, MPI_Comm comm, int com_rank, const can_node *node) {
 	int buffer_int[MAX_SIZE_BUFFER], count, useless = 42;
 	char buffer_char[MAX_SIZE_BUFFER];
 	int from = req_status->MPI_SOURCE, tag = req_status->MPI_TAG;
@@ -336,6 +345,9 @@ void CAN_REQ_Fetch_data(MPI_Status *req_status ,MPI_Comm comm,int com_rank ,cons
     init_pair(&rec_pair, buffer_int[1], buffer_int[2]);
     if(is_land_contains_pair(&(node->land_id), &rec_pair)) {
     	printf("[ %d ] j'ai la donnée ;) :  %d \n", com_rank, buffer_int[0]);
+		// itérer sur la liste
+		
+
     	can_data moc;
     	int total_size = 0;
     	init_data(&moc, sizeof(int), DATA_INT, &useless);
@@ -371,6 +383,7 @@ int CAN_REQ_Root_init(MPI_Status *req_status, MPI_Comm comm, int com_rank, can_n
 
     if(rec_buffer_int[0] == 1) {
         init_land(&(node->land_id), 0, 0, SIZE_X, SIZE_Y);
+		init_list(&(node->data_storage), sizeof(chunk));
         MPI_Send((&rec_buffer_int[0]) ,1 ,MPI_INT ,ROOT_PROCESS ,ACK_TAG_BOOTSTRAP ,comm);
     } else {
         rec_buffer_int[0] = com_rank;
@@ -383,6 +396,7 @@ int CAN_REQ_Root_init(MPI_Status *req_status, MPI_Comm comm, int com_rank, can_n
 }
 
 void CAN_REQ_Rec_Neighbours(MPI_Status *req_status, MPI_Comm comm, int com_rank, can_node *node , int *wait_for) {
+	UNUSED(com_rank);
     int nb_voisins, idx = 0, count, dummy = 0;
     unsigned int buffer_ui[MAX_SIZE_BUFFER];
     MPI_Status status;
@@ -442,6 +456,7 @@ void CAN_REQ_Send_Land_order(MPI_Status *req_status,const MPI_Comm comm,const ca
 }
 
 void CAN_REQ_Update_Neighbours(MPI_Status *req_status,const MPI_Comm comm,const int com_rank ,can_node *node ) {
+	UNUSED(com_rank);
 	neighbour temp_voisin;
     int dummy = 0;
     CAN_Receive_neighbour(&temp_voisin, req_status->MPI_TAG, req_status->MPI_SOURCE,comm);

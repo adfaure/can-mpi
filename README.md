@@ -13,7 +13,7 @@ make runtest
 make test
 ```
 
-# pour builder l'appli sans builder ni executer les tests (snif)
+# pour builder l'appli ni executer les tests (snif)
 ```
 make mpi_can
 ```

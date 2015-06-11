@@ -20,7 +20,6 @@ double entire_dist_betwen_points(int x1, int y1, int x2, int y2) {
     return sqrt(pow((double)(x2 - x1), 2) + pow((double)(y2 - y1),2 ));
 }
 
-
 float **alloc_2d_float(int rows, int cols) {
     float *data = (float *)malloc(rows*cols*sizeof(float));
     float **array= (float **)malloc(rows*sizeof(float*));
@@ -188,11 +187,28 @@ int land_storage_fetch_data(const land_storage *ls, unsigned int x, unsigned int
 	return 1;
 }
 
-void init_data(can_data *data, unsigned int data_size, unsigned int data_type,const void *elem) {
+void init_data(can_data *data, unsigned int data_size, unsigned int data_type, const void *elem) {
 	data->data_type = data_type;
 	data->element_size = data_size;
 	data->data = malloc(data_size);
 	memcpy(data->data, elem, data_size);
+}
+
+void init_chunk(chunk * chunk, unsigned int x, unsigned int y, const can_data * data_wrapper) {
+    chunk->x = x;
+    chunk->y = y;
+    memcpy(&chunk->data_wrapper, data_wrapper, sizeof(can_data));
+}
+
+int list_find(const list * l, int(*cb)(const void *), chunk * found) {
+    for (unsigned int i = 0; i < (unsigned int)l->nb_elem; ++i) {
+        list_get_index(l, i, found);
+        if (cb(found)) {
+            printf("OKOK\n");
+            return 1;
+        }
+    }
+    return 0;
 }
 
 void free_can_data_(can_data *data) {

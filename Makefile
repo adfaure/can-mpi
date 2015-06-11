@@ -1,4 +1,4 @@
-CFLAGS=-std=gnu11 -Wall -Wextra -pedantic -Wstrict-aliasing
+CFLAGS=-std=gnu11 -Wall -Wextra -pedantic -Wstrict-aliasing -g
 
 all: mpi_can runtest
 

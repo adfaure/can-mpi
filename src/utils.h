@@ -64,11 +64,26 @@ typedef struct _land_storage {
 	can_data ***data;
 } land_storage;
 
+typedef struct _chunk {
+    can_data data_wrapper;
+	unsigned int x, y;
+} chunk;
 
 /**
  *
  */
-void init_data(can_data *data, unsigned int data_size, unsigned int data_type,const void *elem);
+void init_chunk(chunk * chunk, unsigned int x, unsigned int y, const can_data * data_wrapper);
+
+/**
+ * Place dans found le premier élement de la liste l pour lequel le calback cb retourne vrai
+ *  Remarque: si aucun élément ne match, alors found contiendra le dernier element de la liste
+ */
+ int list_find(const list * l, int(*cb)(const void *), chunk * found);
+
+/**
+ *
+ */
+void init_data(can_data *data, unsigned int data_size, unsigned int data_type, const void *elem);
 
 /**
  *
