@@ -166,15 +166,15 @@ void prompt(int root_rank, MPI_Comm comm, int nb_proc) {
             printf("---insert all: %s\n", user_cmd);
             CAN_Root_Process_Job(root_rank, comm, nb_proc);
             printf("---nbproc: %d\n", nb_proc);
-            for (unsigned int i = 0; i < (unsigned int)nb_proc; ++i) {
-                nodes_set(nodes_inserted, nb_proc, i);
+            for (unsigned int j = 0; j < (unsigned int)nb_proc; ++j) {
+                nodes_set(nodes_inserted, nb_proc, j);
             }
         }
         else if (strncmp(str_insert, user_cmd, 6) == 0) {
             printf("---insert : %s\n", user_cmd);
             char number[MAX_LEN];
-            for (unsigned int i = 6; i < MAX_LEN-6; ++i) {
-                number[i - 6] = user_cmd[i];
+            for (unsigned int j = 6; j < MAX_LEN-6; ++j) {
+                number[j - 6] = user_cmd[j];
             }
             char *useless;
             int node_to_insert = (int)strtol(number, &useless, 10);
@@ -185,7 +185,6 @@ void prompt(int root_rank, MPI_Comm comm, int nb_proc) {
         }
         else if (strcmp(str_status, user_cmd) == 0) {
             printf("---status: %s\n", user_cmd);
-            fflush(stdout);
             nodes_print_not_inserted(nodes_inserted, nb_proc);
         }
 		else if (strcmp(str_log, user_cmd) == 0) {
@@ -195,6 +194,18 @@ void prompt(int root_rank, MPI_Comm comm, int nb_proc) {
 			sprintf((char *)name, "%s_%d", base_path, i++);
 			CAN_Log_informations(comm, root_rank, nb_proc, (char *)name);
 		}
+		else if (strncmp(str_put, user_cmd, 3) == 0) {
+            printf("---put: %s\n", user_cmd);
+			// char number[MAX_LEN];
+            // for (unsigned int j = 3; j < MAX_LEN-3; ++j) {
+            //     number[j - 3] = user_cmd[j];
+            // }
+            // char *useless;
+            // int node_to_insert = (int)strtol(number, &useless, 10);
+			int x, y, data;
+			sscanf (user_cmd, "put %d %d %d", &x, &y, &data);
+			DHT_put(root_rank, comm, nb_proc, x, y, data);
+        }
         else {
             printf("invalid command\n");
             fflush(stdout);
@@ -248,15 +259,14 @@ int CAN_Root_Process_Job(int root_rank, MPI_Comm comm, int nb_proc) {
             }
         }
     }
-    put(ROOT_PROCESS, MPI_COMM_WORLD, nb_proc);
+    DHT_put(ROOT_PROCESS, MPI_COMM_WORLD, nb_proc, 550, 300, 42);
     return 1;
 }
 
-int put(int root_rank, MPI_Comm comm, int nb_proc) {
-    int data = 42;
+int DHT_put(int root_rank, MPI_Comm comm, int nb_proc, unsigned int x, unsigned int y, int data) {
     pair test;
     can_data s_data;
-    init_pair(&test, 550, 300);
+    init_pair(&test, x, y);
     CAN_Attach_new_data(root_rank, 1, comm, &test, &data, DATA_INT , sizeof(int));
     CAN_Fetch_data(comm, root_rank, 1,  &test, &s_data);
     CAN_Log_informations(comm, root_rank, nb_proc, "logs/end_log");

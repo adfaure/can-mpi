@@ -92,6 +92,7 @@ void CAN_Attach_new_data(int self_rank, int first_node, MPI_Comm comm, pair *_pa
  */
 void prompt(int root_rank, MPI_Comm comm, int nb_proc);
 
-int put(int root_rank, MPI_Comm comm, int nb_proc);
+int DHT_put(int root_rank, MPI_Comm comm, int nb_proc, unsigned int x, unsigned int y, int data);
+
 
 #endif
