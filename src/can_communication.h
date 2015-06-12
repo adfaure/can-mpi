@@ -102,4 +102,14 @@ int put(int root_rank, MPI_Comm comm, int nb_proc);
  */
 void chunk_to_buffer(const list* ch, unsigned int buffer[MAX_SIZE_BUFFER] );
 
+/**
+ *
+ */
+int DHT_put(int root_rank, MPI_Comm comm, unsigned int x, unsigned int y, int data);
+
+/**
+ *
+ */
+int DHT_get(MPI_Comm comm, int root_rank, int x, int y);
+
 #endif
