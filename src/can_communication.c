@@ -1,5 +1,4 @@
 #include "can_communication.h"
-#include <pthread.h>
 
 #define UNUSED(x) (void)(x)
 
@@ -49,12 +48,13 @@ void CAN_Recv_localise_timeout(int *loc, const pair *_pair,  int self_rank,  int
 
 
 void CAN_Log_informations(MPI_Comm comm,const int root_rank, const int nb_proc, const char *base_path) {
-    MPI_Status main_loop_status;
+    MPI_Status main_loop_status, data_status;
     unsigned int land_buffer[4] , buffer_ui[MAX_SIZE_BUFFER], buffer_simple_int = 0;
-    int count; // wait_array on attend un message d'une source avec un tag
+    int count, data_count; // wait_array on attend un message d'une source avec un tag
     land temp_land;
-    list  temp_voisins, lands;
+    list  temp_voisins, lands, data_localisations;
     neighbour temp_voisin;
+    pair temp_pair;
     FILE * file;
 
     const char svg[5] = ".svg\0";
@@ -79,6 +79,7 @@ void CAN_Log_informations(MPI_Comm comm,const int root_rank, const int nb_proc, 
 
     init_list(&temp_voisins, sizeof(neighbour));
     init_list(&lands, sizeof(land));
+    init_list(&data_localisations, sizeof(pair));
 
     for(int i = 0; i < nb_proc; i++) {
         if(i != root_rank) {
@@ -99,11 +100,28 @@ void CAN_Log_informations(MPI_Comm comm,const int root_rank, const int nb_proc, 
                 log_factory(file, &temp_voisin, NEIGHBOUR_LOG, i);
                 idx += 5;
             }
+
+            MPI_Send(&buffer_simple_int ,1 , MPI_INT, i, SEND_DATA_ORDER, comm);
+            MPI_Probe(i, ACK, comm, &data_status);
+            MPI_Get_count (&data_status, MPI_UNSIGNED, &data_count);
+            MPI_Recv(&buffer_ui[0] ,data_count, MPI_UNSIGNED, i, ACK, comm, &data_status);
+            int nb_data = data_count / (sizeof(struct _pair) / sizeof(unsigned int));
+            idx = 0;
+            for(int j = 0; j < nb_data; j++) {
+                init_pair(&temp_pair, buffer_ui[idx], buffer_ui[idx+1]);
+                list_add_front(&data_localisations, &temp_pair);
+                //log_factory(file, &temp_voisin, NEIGHBOUR_LOG, i);
+                idx += 2;
+            }
         }
     }
-    create_svg_logs(svg_name_file , SIZE_X, SIZE_Y ,&lands);
+
+    create_svg_logs(svg_name_file , SIZE_X, SIZE_Y ,&lands, &data_localisations);
+
     list_clear(&temp_voisins, free_neighbour_cb);
     list_clear(&lands,  free_land_cb);
+    init_list(&data_localisations, free_land_cb);
+
     free(svg_name_file);
     free(txt_file);
     fclose(file);
@@ -147,7 +165,12 @@ void prompt(int root_rank, MPI_Comm comm, int nb_proc) {
     printf("> insert all \t insert all nodes in the overlay\n");
     printf("\n");
 
+    // init de la première node :s
+    if(CAN_Root_Process_Job_Insert_One(root_rank, comm, 1, nb_proc)) {
+        nodes_set(nodes_inserted, nb_proc, 1);
+    }
     while (1) {
+    	usleep(1000);
         printf("> ");
         fflush(stdout);
         fgets (user_cmd, MAX_LEN, stdin);
@@ -206,7 +229,6 @@ int CAN_Root_Process_Job_Insert_One(int root_rank, MPI_Comm comm, int proc_to_in
             MPI_Send(&main_loop_buffer_int[0] ,1 , MPI_INT, proc_to_insert, SEND_ENTRY_POINT, comm);
             MPI_Recv(&main_loop_buffer_int[0] ,1 , MPI_INT, proc_to_insert, ACK, comm, &main_loop_status); // le noeud i a été inséré
             sprintf((char *)name, "%s_%d", base_path, proc_to_insert);
-            CAN_Log_informations(comm, root_rank, nb_proc, (char *)name);
         }
     }
 
@@ -237,6 +259,7 @@ int CAN_Root_Process_Job(int root_rank, MPI_Comm comm, int nb_proc) {
         }
     }
     put(ROOT_PROCESS, MPI_COMM_WORLD, nb_proc);
+    CAN_Log_informations(comm,root_rank, nb_proc, (char *)name);
     return 1;
 }
 
@@ -305,8 +328,8 @@ void CAN_REQ_Attach_new_data(MPI_Status *req_status, MPI_Comm comm , const int c
     } else {
         if(find_neighbour(&(node->land_id), &(node->voisins), &rec_pair, &neighbour_temp_find)) {
         	MPI_Send(&buffer_char[0], count, MPI_CHAR, neighbour_temp_find.com_rank, tag,  comm);
-        	printf("[ %d ] --> [ %d ] ", com_rank, neighbour_temp_find.com_rank);
-        	print_pair(&rec_pair);
+ //       	printf("[ %d ] --> [ %d ] ", com_rank, neighbour_temp_find.com_rank);
+//        	print_pair(&rec_pair);
         } else {
             printf("ERROR lors de la recherche de voisins \n");
         }
@@ -362,8 +385,8 @@ void CAN_REQ_Fetch_data(MPI_Status *req_status, MPI_Comm comm, int com_rank, con
     } else {
         if(find_neighbour(&(node->land_id), &(node->voisins), &rec_pair, &neighbour_temp_find)) {
         	MPI_Send(&buffer_int[0], count, MPI_INT, neighbour_temp_find.com_rank, tag,  comm);
-        	printf("[ %d ] --> [ %d ] ", com_rank, neighbour_temp_find.com_rank);
-        	print_pair(&rec_pair);
+        	//printf("[ %d ] --> [ %d ] ", com_rank, neighbour_temp_find.com_rank);
+        	//print_pair(&rec_pair);
         } else {
             printf("ERROR lors de la recherche de voisins \n");
         }
@@ -432,8 +455,6 @@ int CAN_REQ_Request_to_join(MPI_Status *req_status,const MPI_Comm comm,const int
     } else {
         if(find_neighbour(&(node->land_id), &(node->voisins), &rec_pair, &neighbour_temp_find)) {
             MPI_Send(&buffer_int[0], 3, MPI_INT, neighbour_temp_find.com_rank, REQUEST_TO_JOIN,  comm);
-          printf("[ %d ] --> [ %d ] ", com_rank, neighbour_temp_find.com_rank);
-      	    print_pair(&rec_pair);
         } else {
             printf("ERROR lors de la recherche de voisins \n");
         }
@@ -484,6 +505,14 @@ void CAN_REQ_Send_Neighbour_order(MPI_Status *req_status,const MPI_Comm comm,con
 	MPI_Send((&buffer_ui[0]), node->voisins.nb_elem * (sizeof(neighbour)/sizeof(unsigned int)), MPI_UNSIGNED, req_status->MPI_SOURCE, ACK, comm);
 }
 
+void CAN_REQ_Send_data_order(MPI_Status *req_status ,MPI_Comm comm, int com_rank ,can_node *node) {
+	unsigned buffer[MAX_SIZE_BUFFER];
+	int main_loop_buffer_int;
+	chunk_to_buffer(&(node->data_storage), buffer);
+	MPI_Recv(&main_loop_buffer_int ,1, MPI_INT, req_status->MPI_SOURCE, req_status->MPI_TAG, comm, req_status);
+	MPI_Send((&buffer[0]), node->data_storage.nb_elem * (sizeof(pair)/sizeof(unsigned int)), MPI_UNSIGNED, req_status->MPI_SOURCE, ACK, comm);
+}
+
 void CAN_REQ_Request_init_split(MPI_Status *req_status, const MPI_Comm comm, const int com_rank, can_node *node, int *wait_for) {
 	int count, main_loop_buffer_int;
 	MPI_Status status;
@@ -514,7 +543,7 @@ int CAN_Node_Job(int com_rank, MPI_Comm comm) {
                    MPI_Status *status)
 */
     while(1) {
-    	pthread_yield();
+    	usleep(1000); // nice idle =)
     	MPI_Iprobe(wait_for,MPI_ANY_TAG, MPI_COMM_WORLD,&flag , &main_loop_status);
         if(flag) {
 			main_loop_tag  = main_loop_status.MPI_TAG;
@@ -533,6 +562,12 @@ int CAN_Node_Job(int com_rank, MPI_Comm comm) {
 			else if(main_loop_tag == SEND_LAND_ORDER) {
 				//Reception d'une demande e journalisation de la zone par le proc 0
 				CAN_REQ_Send_Land_order(&main_loop_status , comm, &node);
+			}
+
+			else if(main_loop_tag == SEND_DATA_ORDER) {
+				// traitement
+				//void CAN_REQ_Fetch_data(MPI_Status req_status ,MPI_Comm comm,int com_rank ,const land *land_id, const list * voisins) {
+				CAN_REQ_Send_data_order(&main_loop_status , comm, com_rank ,&node);
 			}
 
 			else if(main_loop_tag == RES_INIT_NEIGHBOUR) {
@@ -577,4 +612,17 @@ int CAN_Node_Job(int com_rank, MPI_Comm comm) {
         }
     }
     return 1;
+}
+
+/*
+ * only x and y
+ */
+void chunk_to_buffer(const list* ch, unsigned int buffer[MAX_SIZE_BUFFER] ) {
+	chunk temp; int idx = 0;
+	for(int i = 0; i < ch->nb_elem; i++) {
+		list_get_index(ch, i, &temp);
+		buffer[idx]     = temp.x;
+		buffer[idx + 1] = temp.y;
+		idx += 2;
+	}
 }

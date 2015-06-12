@@ -168,6 +168,12 @@ void init_pair(pair *p, int x, int y);
  */
 void print_pair(const pair *p);
 
+
+/**
+ * Affiche une pair sur la sortie standard
+ */
+void print_pair_cb(void *p);
+
 /**
  * Allocateur d'un tableau contigue en mémoire de taille @rows x @cols x sizeof(int)
  */

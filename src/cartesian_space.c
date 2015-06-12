@@ -562,7 +562,7 @@ void log_factory(FILE *f,  const void *data,  int CODE,  int from) {
     fflush(f);
 }
 
-void create_svg_logs(const char* path,const int size_x, const int size_y ,const list *list_lands) {
+void create_svg_logs(const char* path,const int size_x, const int size_y ,const list *list_lands, const list * data) {
 	int mult = 4;
     FILE *f = fopen(path, "w+");
     if(!f) {
@@ -570,6 +570,7 @@ void create_svg_logs(const char* path,const int size_x, const int size_y ,const 
     }
     unsigned int color_max = 16777215;
     land temp_land;
+    pair temp_paire;
     int text_size_x, text_size_y;
     unsigned long color =  color_max / list_lands->nb_elem;
     fprintf(f, "<?xml version=\"1.0\" encoding=\"utf-8\"?> \n");
@@ -587,6 +588,11 @@ void create_svg_logs(const char* path,const int size_x, const int size_y ,const 
         fprintf(f, "<text style=\" font-size  : %d; font-weight: bold;\" x=\"%d\" y=\"%d\" fill=\"#%x\"  font-weight=\"900\" >",mult * 24 ,text_size_x * mult , text_size_y * mult, (unsigned int)~((i + 1) * color ));
         fprintf(f, "%d", (list_lands->nb_elem - i));
         fprintf(f, "</text>\n");
+    }
+    list_apply(data, print_pair_cb);
+    for(int i = 0 ; i < data->nb_elem; i++) {
+        list_get_index(data, i, &temp_paire);
+        fprintf(f, " <circle cx=\"%u\" cy=\"%u\" r=\"10\" fill=\"#%X\" /> \n", temp_paire.x * mult, mult * temp_paire.y , (unsigned int)((i + 1) * color));
     }
 
     fprintf(f, "</svg> \n");

@@ -25,6 +25,7 @@
 #define ATTACH_NEW_DATA      888
 #define FETCH_DATA           999
 #define SEND_FETCH_DATA      111
+#define SEND_DATA_ORDER      222
 
 #define DATA_INT 0
 
@@ -91,6 +92,14 @@ void CAN_Attach_new_data(int self_rank, int first_node, MPI_Comm comm, pair *_pa
  */
 void prompt(int root_rank, MPI_Comm comm, int nb_proc);
 
+/**
+ *
+ */
 int put(int root_rank, MPI_Comm comm, int nb_proc);
+
+/**
+ *
+ */
+void chunk_to_buffer(const list* ch, unsigned int buffer[MAX_SIZE_BUFFER] );
 
 #endif

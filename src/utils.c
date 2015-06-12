@@ -16,6 +16,11 @@ void print_pair(const pair *p) {
     printf("paire : (%d ,%d) \n", p->x, p->y);
 }
 
+void print_pair_cb( void* p) {
+    pair _pair = *(pair*)p;
+	printf("paire : (%d ,%d) \n", _pair.x, _pair.y);
+}
+
 double entire_dist_betwen_points(int x1, int y1, int x2, int y2) {
     return sqrt(pow((double)(x2 - x1), 2) + pow((double)(y2 - y1),2 ));
 }
