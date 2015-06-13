@@ -1,0 +1,93 @@
+\documentclass[a4paper, 11pt, french]{article}
+%\usepackage{babel} % sans option, babel choisit la langue en fonction de celle définie dans la classe du document
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+%\usepackage{enumitem}
+%consigne a respecter:
+\usepackage{geometry}
+\geometry{
+  a4paper,
+  total={210mm,297mm},
+  left=20mm,
+  right=20mm,
+  top=20mm,
+  bottom=20mm,
+  bindingoffset=0mm
+}
+
+\usepackage[usenames, dvipsnames]{color}
+
+\definecolor{azur}{RGB}{0, 127, 255}
+\definecolor{orange}{RGB}{255, 127, 0}
+\definecolor{red}{RGB}{255, 0, 0}
+\definecolor{brown}{RGB}{129,49,0}
+\definecolor{grey}{RGB}{127, 127, 131}
+\definecolor{darkGray}{gray}{0.25}
+
+\definecolor{green}{RGB}{63, 205, 0}
+\definecolor{pink}{RGB}{205, 0, 63}
+\definecolor{blue}{RGB}{0, 63, 205}
+
+\usepackage[export]{adjustbox}
+
+%bibtex:
+%\usepackage{url}
+%\usepackage{natbib}
+
+%coloration syntaxique plus sympathique que celle par défaut
+%\usepackage{minted}
+%\usemintedstyle{fruity}
+%\usepackage{mdframed}
+%\BeforeBeginEnvironment{minted}{\begin{mdframed}}
+%\AfterEndEnvironment{minted}{\end{mdframed}}
+
+\usepackage{setspace}
+\onehalfspacing
+
+\usepackage[babel=true]{csquotes} % csquotes va utiliser la langue définie dans babel
+\usepackage{graphicx}
+\usepackage{wrapfig}
+
+\usepackage{listings}
+
+\usepackage{float}
+\usepackage{amsmath,amsfonts,amssymb}
+
+\usepackage{titlesec}
+
+\titleformat*{\section}{\Large\bfseries\sffamily\color{pink}}
+\titleformat*{\subsection}{\normalsize\bfseries\sffamily\color{green}}
+\titleformat*{\subsubsection}{\normalsize\bfseries\sffamily\color{blue}}
+
+
+\title{\textbf{MIF32 - Compte-Rendu du projet CAN}}
+\author{Adrien FAURE(pXXXXXXXX) \& Raphaël CAZENAVE-LEVEQUE (p1410942)}
+\date{2014-2015}
+
+\setlength{\parskip}{1.15ex plus 0.5ex minus 0.2ex}
+
+\begin{document}
+    \maketitle
+
+\begin{abstract}
+Nous présentons une implémentation en C/MPI d'une DHT utilisant le protocole CAN. Nos choix d'implémentation permettent une recherche efficace dans la DHT depuis n'importe quel noeud. De nombreux tests unitaires sont présents dans notre projet. Nous offrons aussi des représentations graphiques en SVG et textuelles de l'état de la DHT. Ces représentations sont générées automatiquements lors de l'execution de la DHT, ou à la demande si l'on utilise l'interface en ligne de commande que nous avons écrite.
+\end{abstract}
+\section{Fonctionalités disponibles}
+Les cinq étapes ont été
+\section{Choix de conception}
+\section{Tests unitaires}
+Au cours du projet, il est devenu nécessaire pour nous d'écrire des tests unitaires afin d'accélérer le débuggage et d'assurer le bon fonctionnement de notre code. Nous avons donc isolé les zones de codes comportant nos algorithmes des zones utilisants MPI, cela nous a permit d'obtenir une bonne couverture du code par les tests, et d'être relativement sûr du comportement de notre code.
+\section{Algorithme de routage}
+\section{Relocation des données}
+\section {Les structures de données mises en oeuvre}
+Chaque noeud possède une liste capable de stocker les données dont le noeud est responsable. Ces données sont encapsulées dans une structure afin de pouvoir y conserver la position des données.
+
+Les noeuds possèdent une liste de frontières représentant le voisinage proche du noeud.
+
+\section {Ajout dynamique de processus lors de l'execution}
+Nous avons souhaité ajouter la possibilité d'ajouter des processus au cours de l'execution. Nous avons effectué des essais en utilisant \textit{MPI\_Spawn}, puis \textit{MPI\_Intercomm\_merge} pour obtenir un communicateur intra contenant tous les processus ainsi que le nouveaux processus. Malheureusement, il n'est pas possible de re-merger ce communicateur \footnote{Nous avons du abandonner cette idée suite à la lecture de ce topic de la mailling-list d'openMPI - \texttt{https://www.open-mpi.org/community/lists/users/2007/10/4312.php}} lors de spawn successifs, car \textit{MPI\_Intercomm\_merge} est une routine collective et donc chaque processus précédément spawné doit participer au prochain merge. 
+
+\appendix % début des annexes
+\section{Annexe 1 - README}
+\lstinputlisting[numbers=left, numberstyle=\tiny, stepnumber=1, numbersep=5pt]{../README.md}
+\end{document}
