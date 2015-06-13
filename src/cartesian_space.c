@@ -30,9 +30,7 @@ int CAN_Send_neighbour_list(const list *l, int mpi_tag, int mpi_destinataire,  M
 	unsigned int buffer[MAX_SIZE_BUFFER],  size = l->nb_elem * (sizeof(neighbour) / sizeof(unsigned int));
     neighbour_to_buffer(l,  buffer);
     MPI_Send(&buffer[0],  size, MPI_UNSIGNED, mpi_destinataire,  mpi_tag,  comm);
-    printf("attend  ack CAN_Send_neighbour \n");
     MPI_Recv(&nothing, 1, MPI_UNSIGNED, mpi_destinataire, 78, comm, &status); // ACK == 78
-    printf("recu ack \n");
     return 1;
 }
 
@@ -596,7 +594,6 @@ void create_svg_logs(const char* path,const int size_x, const int size_y ,const 
         fprintf(f, "%d", (list_lands->nb_elem - i));
         fprintf(f, "</text>\n");
     }
-    list_apply(data, print_pair_cb);
     for(int i = 0 ; i < data->nb_elem; i++) {
         list_get_index(data, i, &temp_paire);
         list_get_index(froms, i, &from);

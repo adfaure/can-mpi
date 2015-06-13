@@ -218,7 +218,15 @@ int DHT_rm(int root_rank, MPI_Comm comm, unsigned int x, unsigned int y);
  * @param y
  * @return
  */
-int DHT_get(MPI_Comm comm, int root_rank, int x, int y);
+int DHT_get(MPI_Comm comm, int root_rank, int x, int y, can_data * elem);
+
+/**
+ *@brief insert @nb_total random data on, the overlay and store the five first and five last to retrieve it
+ *@param com_ran : int
+ *@param MPI_Comm comm
+ *@param nb_total
+ */
+CAN_Etape_trois(int com_rank,int nb_proc, MPI_Comm comm, int nb_total);
 
 
 
