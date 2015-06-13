@@ -214,7 +214,7 @@ void prompt(int root_rank, MPI_Comm comm, int nb_proc) {
 
 		if (strcmp(str_all, user_cmd) == 0) {
 			printf("---insert all: %s\n", user_cmd);
-			CAN_Root_Process_Job(root_rank, comm, nb_proc);
+			CAN_Root_Process_insert_all(root_rank, comm, nb_proc);
 			printf("---nbproc: %d\n", nb_proc);
 			for (unsigned int j = 0; j < (unsigned int)nb_proc; ++j) {
 				nodes_set(nodes_inserted, nb_proc, j);
@@ -303,6 +303,34 @@ int CAN_Root_Process_Job_Insert_One(int root_rank, MPI_Comm comm, int proc_to_in
 		}
 	}
 
+	return 1;
+}
+
+
+int CAN_Root_Process_insert_all(int root_rank, MPI_Comm comm, int nb_proc) {
+
+	MPI_Status main_loop_status;
+	int main_loop_tag, main_loop_buffer_int[MAX_SIZE_BUFFER]; // wait_array on attend un message d'une source avec un tag
+	const char* base_path = "logs/log_in_process_insertion";
+	const char* name[MAX_SIZE_BUFFER];
+
+	for(int i = 0; i < nb_proc; i++) {
+		if(i != root_rank) {
+			MPI_Send(&i, 1, MPI_INT, i, ROOT_TAG_INIT_NODE, comm);
+			MPI_Recv(&main_loop_buffer_int[0] ,1 , MPI_INT, i, MPI_ANY_TAG, comm, &main_loop_status);
+			main_loop_tag  = main_loop_status.MPI_TAG;
+			if(main_loop_tag == ACK_TAG_BOOTSTRAP) {
+				printf("bootstraping node did it well \n");
+			} else if(main_loop_tag == GET_ENTRY_POINT) {
+				main_loop_buffer_int[0] = 1;
+				MPI_Send(&main_loop_buffer_int[0] ,1 , MPI_INT, i, SEND_ENTRY_POINT, comm);
+				MPI_Recv(&main_loop_buffer_int[0] ,1 , MPI_INT, i, ACK, comm, &main_loop_status);
+				sprintf((char *)name, "%s_%d", base_path, i);
+				CAN_Log_informations(comm,root_rank, nb_proc, (char *)name);
+			}
+		}
+	}
+	CAN_Log_informations(comm,root_rank, nb_proc, (char *)name);
 	return 1;
 }
 
@@ -832,7 +860,6 @@ int CAN_Node_Job(int com_rank, MPI_Comm comm) {
 			} else if(main_loop_tag == SEND_ORDER_QUIT) {
 				// traitement
 				//void CAN_REQ_Fetch_data(MPI_Status req_status ,MPI_Comm comm,int com_rank ,const land *land_id, const list * voisins) {
-				CAN_REQ_Send_order_quit(&main_loop_status , comm, com_rank ,&node);
 				break;
 			}
 
@@ -842,13 +869,10 @@ int CAN_Node_Job(int com_rank, MPI_Comm comm) {
 			}
 		}
 	}
-	printf("[ %d ] quit ", com_rank);
+	list_clear(&(node.data_storage), free_chunk_cb);
+	list_clear(&(node.voisins), free_neighbour_cb);
+	printf("[ %d ] quit \n", com_rank);
 	return 1;
-}
-
-void CAN_REQ_Send_order_quit(MPI_Status status ,int  comm,int com_rank , can_node node) {
-	list_clear( &node->data_storage, free_chunk_cb);
-	list_clear(&node->voisins, free_neighbour_cb);
 }
 
 void CAN_Quitt_overlay( int root,int nb_proc, MPI_Comm comm) {

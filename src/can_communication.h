@@ -110,6 +110,15 @@ void CAN_Fetch_data(MPI_Comm comm, int com_rank, int first_rank ,const pair *pai
 int CAN_Root_Process_Job(int root_rank, MPI_Comm comm,int nb_proc);
 
 /**
+ * @brief CAN_Root_Process_insert_all Main job of the root process
+ * @param root_rank
+ * @param comm
+ * @param nb_proc
+ * @return
+ */
+int CAN_Root_Process_insert_all(int root_rank, MPI_Comm comm, int nb_proc);
+
+/**
  * @brief CAN_Root_Process_Job_Insert_One The root process ask a proc to begin the insertion routine
  * @param root_rank
  * @param comm
@@ -244,4 +253,5 @@ void CAN_shuffle_insert(int data_type, int nb_elem, int self_rank, MPI_Comm comm
  * Root process send message to quit
  */
 void CAN_Quitt_overlay( int root,int nb_proc, MPI_Comm comm);
+
 #endif
