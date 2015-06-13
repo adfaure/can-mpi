@@ -56,6 +56,11 @@ void init_can_node(can_node *node);
 /**
  *
  */
+int CAN_Send_data_update(const list *list, int mpi_tag, int mpi_destinataire, MPI_Comm comm);
+
+/**
+ *
+ */
 void CAN_Recv_localise(int *loc, const pair *_pair, int self_rank, int first_node, MPI_Comm comm);
 
 
@@ -134,5 +139,7 @@ int DHT_rm(int root_rank, MPI_Comm comm, unsigned int x, unsigned int y);
  *
  */
 int DHT_get(MPI_Comm comm, int root_rank, int x, int y);
+
+
 
 #endif

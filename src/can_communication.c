@@ -556,7 +556,7 @@ int CAN_REQ_Root_init(MPI_Status *req_status, MPI_Comm comm, int com_rank, can_n
 	return 1;
 }
 
-void CAN_REQ_Rec_Neighbours(MPI_Status *req_status, MPI_Comm comm, int com_rank, can_node *node , int *wait_for) {
+void CAN_REQ_Rec_Neighbours(MPI_Status *req_status, MPI_Comm comm, int com_rank, can_node *node) {
 	UNUSED(com_rank);
 	int nb_voisins, idx = 0, count, dummy = 0;
 	unsigned int buffer_ui[MAX_SIZE_BUFFER];
@@ -580,13 +580,11 @@ void CAN_REQ_Rec_Neighbours(MPI_Status *req_status, MPI_Comm comm, int com_rank,
 	//*wait_for = MPI_ANY_SOURCE;
 }
 
-CAN_REQ_Rec_data(MPI_Status *req_status, MPI_Comm comm, int com_rank, can_node *node , int *wait_for) {
+int CAN_REQ_Rec_data(MPI_Status *req_status, MPI_Comm comm, int com_rank, can_node *node , int *wait_for) {
 	printf("ready to receive data \n");
 	UNUSED(com_rank);
 	int count;
-	MPI_Status status;
 	char buffer[MAX_SIZE_BUFFER_CHAR];
-	neighbour temp_voisin;
 	MPI_Get_count (req_status, MPI_CHAR, &count);
 	MPI_Recv(&buffer[0], count, MPI_CHAR, req_status->MPI_SOURCE,req_status->MPI_TAG,comm, req_status);
 	MPI_Send(&com_rank, 1, MPI_UNSIGNED, req_status->MPI_SOURCE, ACK, comm );
@@ -594,6 +592,7 @@ CAN_REQ_Rec_data(MPI_Status *req_status, MPI_Comm comm, int com_rank, can_node *
 	list_apply(&node->data_storage ,print_one_chunk);
 	MPI_Send((&count) ,1 ,MPI_INT , ROOT_PROCESS ,ACK ,comm);
 	*wait_for = MPI_ANY_SOURCE;
+	return 1;
 }
 
 // handle  a Join REQUEST return 1 if wait for is changed (maybe not a good convention)
@@ -672,7 +671,7 @@ void CAN_REQ_Send_data_order(MPI_Status *req_status ,MPI_Comm comm, int com_rank
 }
 
 void CAN_REQ_Request_init_split(MPI_Status *req_status, const MPI_Comm comm, const int com_rank, can_node *node, int *wait_for) {
-	int count, main_loop_buffer_int, nothing;
+	int count, main_loop_buffer_int;
 	MPI_Status status;
 	land new_land;
 	unsigned int land_buffer[MAX_SIZE_BUFFER];
@@ -738,7 +737,7 @@ int CAN_Node_Job(int com_rank, MPI_Comm comm) {
 
 			else if(main_loop_tag == RES_INIT_NEIGHBOUR) {
 				//Reception des nouveau voisin
-				CAN_REQ_Rec_Neighbours(&main_loop_status , comm, com_rank, &node, &wait_for);
+				CAN_REQ_Rec_Neighbours(&main_loop_status , comm, com_rank, &node);
 			}
 
 			else if(main_loop_tag == RES_INIT_DATA) {
@@ -793,7 +792,7 @@ int CAN_Node_Job(int com_rank, MPI_Comm comm) {
 
 
 
-void free_dummy(void *elem) {}
+void free_dummy(void *elem) {UNUSED(elem);}
 
 // je pars du principe que tout ce qui n'est pas dans le land 1 doit etre mis dans la seconde liste.
 void distribute_data_after_split(const land *land, list *old_list, list *new_list) {
@@ -842,7 +841,7 @@ void buffer_to_chunk(list *list, const char buffer[MAX_SIZE_BUFFER_CHAR]) {
 	unsigned int nb_total_chunk, idx = 0;
 	memcpy(&nb_total_chunk, &buffer[0], sizeof(unsigned int));
 	idx = sizeof(unsigned int);
-	for(int i = 0 ; i < nb_total_chunk; i++) {
+	for(unsigned int i = 0 ; i < nb_total_chunk; i++) {
 		memcpy(&x, &buffer[idx], sizeof(unsigned int)); idx += sizeof(unsigned int);
 		memcpy(&y, &buffer[idx], sizeof(unsigned int)); idx += sizeof(unsigned int);
 		memcpy(&size, &buffer[idx], sizeof(unsigned int)); idx += sizeof(unsigned int);
