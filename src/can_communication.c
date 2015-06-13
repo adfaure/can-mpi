@@ -334,7 +334,7 @@ int CAN_Root_Process_Job(int root_rank, MPI_Comm comm, int nb_proc) {
 	return 1;
 }
 
-CAN_Etape_trois(int com_rank,int nb_proc ,MPI_Comm comm, int nb_total) {
+void CAN_Etape_trois(int com_rank,int nb_proc ,MPI_Comm comm, int nb_total) {
 	int data[10];
 	list pos_list;
 	pair rand_pair, parcour_pair;
@@ -385,7 +385,6 @@ int DHT_rm(int root_rank, MPI_Comm comm, unsigned int x, unsigned int y) {
 
 int DHT_get(MPI_Comm comm, int root_rank, int x, int y, can_data * elem) {
 	pair p;
-	can_data s_data;
 	init_pair(&p, x, y);
 	CAN_Fetch_data(comm, root_rank, 1, &p, elem);
 	return 1;
@@ -502,7 +501,6 @@ void CAN_REQ_Remove_data(MPI_Status * req_status, MPI_Comm comm, can_node *node)
 			int found = -1;
 			for (int i = 0; i < data_storage->nb_elem; ++i) {
 				list_get_index(data_storage, i, &c);
-				print_one_chunk(&c);
 				if (c.x == x && c.y == y) {
 					found = i;
 					break;
@@ -884,7 +882,8 @@ void chunks_to_buffer(const list *list, char buffer[MAX_SIZE_BUFFER_CHAR],unsign
 	*char_size = idx;
 }
 
-CAN_shuffle_insert(int data_type, int nb_elem, int self_rank, MPI_Comm comm) {
+void CAN_shuffle_insert(int data_type, int nb_elem, int self_rank, MPI_Comm comm) {
+	UNUSED(data_type);
 	pair temp ;
 	can_data data;
 	int i_rand;

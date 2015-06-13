@@ -235,13 +235,8 @@ void test_LIST_FIND (void) {
     list_add_front(&l, &c_2);
     list_add_front(&l, &c_3);
 
-    printf("***************************************************************\n");
-    list_apply(&l, print_one_chunk);
-
     list_find(&l,&p ,test, &c_out);
 
-    printf("***************************j'ai trouvé:*************************\n");
-    print_one_chunk(&c_out);
 }
 
 /* The main() function for setting up and running the tests.

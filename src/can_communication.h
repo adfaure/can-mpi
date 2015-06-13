@@ -226,7 +226,7 @@ int DHT_get(MPI_Comm comm, int root_rank, int x, int y, can_data * elem);
  *@param MPI_Comm comm
  *@param nb_total
  */
-CAN_Etape_trois(int com_rank,int nb_proc, MPI_Comm comm, int nb_total);
+void CAN_Etape_trois(int com_rank,int nb_proc, MPI_Comm comm, int nb_total);
 
 
 
@@ -237,6 +237,6 @@ CAN_Etape_trois(int com_rank,int nb_proc, MPI_Comm comm, int nb_total);
  * @param self_rank
  * @param comm
  */
-CAN_shuffle_insert(int data_type, int nb_elem, int self_rank, MPI_Comm comm);
+void CAN_shuffle_insert(int data_type, int nb_elem, int self_rank, MPI_Comm comm);
 
 #endif
