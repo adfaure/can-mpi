@@ -337,7 +337,13 @@ int list_find_paire_equals_cb(const void * c, const void *params);
 void log_factory(FILE *f, const void *data, int CODE, int from);
 
 /**
- *
+ * @brief create_svg_logs log the status of the overlay on a svg file (used for debug and for fun)
+ * @param path
+ * @param size_x
+ * @param size_y
+ * @param list_lands
+ * @param data
+ * @param froms
  */
 void create_svg_logs(const char* path,const int size_x, const int size_y ,const list *list_lands, const list *data, const list * froms );
 

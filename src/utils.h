@@ -44,6 +44,9 @@ typedef struct _pair {
 
 typedef enum { false, true } bool;
 
+/**
+  * Struc for list
+  */
 typedef struct _cell {
   void *data;
   struct _cell *next;
@@ -71,17 +74,24 @@ typedef struct _chunk {
 } chunk;
 
 /**
- *
+ * @brief init_chunk data structur for data storage on nodes
+ * @param chunk
+ * @param x
+ * @param y
+ * @param data_wrapper
  */
 void init_chunk(chunk * chunk, unsigned int x, unsigned int y, const can_data * data_wrapper);
 
 /**
- *
+ * @brief get_data get a data from a chunk
+ * @param chunk
+ * @param data_wrapper
  */
 void get_data( const chunk * chunk,can_data * data_wrapper);
 
 /**
- *
+ * @brief print_one_chunk utility function print a chunk
+ * @param c
  */
 void print_one_chunk(void * c);
 
@@ -107,17 +117,23 @@ void init_data(can_data *data, unsigned int data_size, unsigned int data_type, c
 void free_can_data_(can_data *data);
 
 /**
- *
+ * @brief can_data_get_element retrieve element from data
+ * @param c_data
+ * @param elem
  */
 void can_data_get_element(const can_data *c_data, void *elem);
 
 /**
- *
+ * @brief init_land_storage
+ * @param ls
+ * @param size_x
+ * @param size_y
  */
 void init_land_storage(land_storage *ls, unsigned int size_x,unsigned int size_y);
 
 /**
- *
+ * @brief print_data
+ * @param data
  */
 void print_data(const can_data *data);
 
@@ -217,13 +233,17 @@ int list_replace_index(list *l, int i, const void *data);
 int list_remove_index(list * l, int i , void(*free_function)(void *data));
 
 /**
- *
+ * @brief list_remove_front
+ * @param l
+ * @return
  */
 int list_remove_front(list *l, void(*free_function)(void *data));
 
 /**
- *
- * TODO NOT TESTED
+ * @brief list_cp_revert
+ * @param src
+ * @param dst
+ * @return
  */
 int list_cp_revert(const list *src, void(*free_function)(void *data), list *dst);
 
