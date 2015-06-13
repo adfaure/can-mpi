@@ -23,4 +23,4 @@ runtest: test obj/utils.o obj/can_communication.o obj/cartesian_space.o
 	test/exe/cartesian_space_test
 
 clean:
-		rm -f obj/*.o test/exe/* mpi_can
+		rm -f obj/*.o test/exe/* mpi_can mpi_can_child

@@ -1,6 +1,11 @@
 #include "can_communication.h"
 #include "utils.h"
+#include <mpi.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
+#include <assert.h>
 
 #define UNUSED(x) (void)(x)
 
@@ -54,7 +59,7 @@ void CAN_Log_informations(MPI_Comm comm,const int root_rank, const int nb_proc, 
 	unsigned int land_buffer[4] , buffer_ui[MAX_SIZE_BUFFER], buffer_simple_int = 0;
 	int count, data_count; // wait_array on attend un message d'une source avec un tag
 	land temp_land;
-	list  temp_voisins, lands, data_localisations;
+    list  temp_voisins, lands, data_localisations, int_list;
 	neighbour temp_voisin;
 	pair temp_pair;
 	FILE * file;
@@ -82,9 +87,11 @@ void CAN_Log_informations(MPI_Comm comm,const int root_rank, const int nb_proc, 
 	init_list(&temp_voisins, sizeof(neighbour));
 	init_list(&lands, sizeof(land));
 	init_list(&data_localisations, sizeof(pair));
+    init_list(&int_list, sizeof(int));
 
 	for(int i = 0; i < nb_proc; i++) {
 		if(i != root_rank) {
+        	int from = i;
 			MPI_Send(&buffer_simple_int ,1 , MPI_INT, i, SEND_LAND_ORDER, comm);
 			MPI_Recv(&(land_buffer[0]), 4, MPI_UNSIGNED, i, ACK, comm, &main_loop_status);
 			init_land(&temp_land, land_buffer[0], land_buffer[1] , land_buffer[2], land_buffer[3]);
@@ -112,17 +119,19 @@ void CAN_Log_informations(MPI_Comm comm,const int root_rank, const int nb_proc, 
 			for(int j = 0; j < nb_data; j++) {
 				init_pair(&temp_pair, buffer_ui[idx], buffer_ui[idx+1]);
 				list_add_front(&data_localisations, &temp_pair);
+                list_add_front(&int_list, &from);
 				//log_factory(file, &temp_voisin, NEIGHBOUR_LOG, i);
 				idx += 2;
 			}
 		}
 	}
 
-	create_svg_logs(svg_name_file , SIZE_X, SIZE_Y ,&lands, &data_localisations);
+    create_svg_logs(svg_name_file , SIZE_X, SIZE_Y ,&lands, &data_localisations, &int_list);
 
 	list_clear(&temp_voisins, free_neighbour_cb);
 	list_clear(&lands,  free_land_cb);
 	list_clear(&data_localisations, free_land_cb);
+   // list_clear(&int_list, free_land_cb);
 
 	free(svg_name_file);
 	free(txt_file);
@@ -169,7 +178,9 @@ void prompt(int root_rank, MPI_Comm comm, int nb_proc) {
 	const char str_log[] = "log";
 	const char str_put[] = "put";
 	const char str_get[] = "get";
+	const char str_shuffle[] = "shuffle";
 	const char str_rm[] = "rm";
+	const char str_question_3[] = "etape3";
 	unsigned int i = 1;
 
 	bool * nodes_inserted = (bool *) malloc(sizeof(bool) * nb_proc);
@@ -179,11 +190,13 @@ void prompt(int root_rank, MPI_Comm comm, int nb_proc) {
 	printf("\n-- %d nodes availables --\n", nb_proc - 1);
 	printf("> status             : show log about the state of the DHT\n");
 	printf("> insert 2           : insert the node 2 in the overlay\n");
-	printf("> insert all         : insert all nodes in the overlay\n");
+	printf("> insert all         : insert all nodes in the overlay and run etape 3\n");
 	printf("> log                : add a textual/SVG log on logs/ directory\n");
 	printf("> put <x> <y> <data> : put <data> in position (x, y)\n");
 	printf("> get <x> <y>        : get a data from position (x, y)\n");
+	printf("> shuffle <nb>       : randomly insert <nb> random data \n");
 	printf("> rm <x> <y>         : remove a data in position (x, y)\n");
+	printf("> etape3 <x>         : insert <x> element and try to retrieve the 5 last and first \n");
 	printf("\n");
 
 	// init de la première node :s
@@ -201,7 +214,7 @@ void prompt(int root_rank, MPI_Comm comm, int nb_proc) {
 
 		if (strcmp(str_all, user_cmd) == 0) {
 			printf("---insert all: %s\n", user_cmd);
-			CAN_Root_Process_Job(root_rank, comm, nb_proc);
+			CAN_Root_Process_insert_all(root_rank, comm, nb_proc);
 			printf("---nbproc: %d\n", nb_proc);
 			for (unsigned int j = 0; j < (unsigned int)nb_proc; ++j) {
 				nodes_set(nodes_inserted, nb_proc, j);
@@ -221,8 +234,6 @@ void prompt(int root_rank, MPI_Comm comm, int nb_proc) {
 				if(CAN_Root_Process_Job_Insert_One(root_rank, comm, node_to_insert)) {
 					nodes_set(nodes_inserted, nb_proc, node_to_insert);
 				}
-			} else {
-				printf("Are you mad ? You CAN't do this ! This is horrible ! :) :) :)\n");
 			}
 		}
 		else if (strcmp(str_status, user_cmd) == 0) {
@@ -245,14 +256,24 @@ void prompt(int root_rank, MPI_Comm comm, int nb_proc) {
 		else if (strncmp(str_get, user_cmd, 3) == 0) {
 			printf("---get: %s\n", user_cmd);
 			int x, y;
+			can_data data;
 			sscanf (user_cmd, "get %d %d", &x, &y);
-			DHT_get(comm, root_rank, x, y);
-		}
-		else if (strncmp(str_rm, user_cmd, 2) == 0) {
+			DHT_get(comm, root_rank, x, y,&data);
+			printf("found : %d \n", *(int*) data.data);
+		} else if(strncmp(str_shuffle, user_cmd, 7) == 0)  {
+			int x;
+			sscanf (user_cmd, "shuffle %d", &x);
+			CAN_shuffle_insert(DATA_INT , x , root_rank , comm);
+		} else if (strncmp(str_rm, user_cmd, 2) == 0) {
 			printf("---rm: %s\n", user_cmd);
 			int x, y;
 			sscanf (user_cmd, "rm %d %d", &x, &y);
 			DHT_rm(root_rank, comm, x, y);
+		} else if (strncmp(str_question_3, user_cmd, 2) == 0) {
+			printf("---etape 3 : %s\n", user_cmd);
+			int x;
+			sscanf (user_cmd, "etape3 %d ", &x);
+			CAN_Etape_trois(root_rank, nb_proc, comm, x);
 		}
 		else {
 			printf("invalid command\n");
@@ -285,6 +306,34 @@ int CAN_Root_Process_Job_Insert_One(int root_rank, MPI_Comm comm, int proc_to_in
 	return 1;
 }
 
+
+int CAN_Root_Process_insert_all(int root_rank, MPI_Comm comm, int nb_proc) {
+
+	MPI_Status main_loop_status;
+	int main_loop_tag, main_loop_buffer_int[MAX_SIZE_BUFFER]; // wait_array on attend un message d'une source avec un tag
+	const char* base_path = "logs/log_in_process_insertion";
+	const char* name[MAX_SIZE_BUFFER];
+
+	for(int i = 0; i < nb_proc; i++) {
+		if(i != root_rank) {
+			MPI_Send(&i, 1, MPI_INT, i, ROOT_TAG_INIT_NODE, comm);
+			MPI_Recv(&main_loop_buffer_int[0] ,1 , MPI_INT, i, MPI_ANY_TAG, comm, &main_loop_status);
+			main_loop_tag  = main_loop_status.MPI_TAG;
+			if(main_loop_tag == ACK_TAG_BOOTSTRAP) {
+				printf("bootstraping node did it well \n");
+			} else if(main_loop_tag == GET_ENTRY_POINT) {
+				main_loop_buffer_int[0] = 1;
+				MPI_Send(&main_loop_buffer_int[0] ,1 , MPI_INT, i, SEND_ENTRY_POINT, comm);
+				MPI_Recv(&main_loop_buffer_int[0] ,1 , MPI_INT, i, ACK, comm, &main_loop_status);
+				sprintf((char *)name, "%s_%d", base_path, i);
+				CAN_Log_informations(comm,root_rank, nb_proc, (char *)name);
+			}
+		}
+	}
+	CAN_Log_informations(comm,root_rank, nb_proc, (char *)name);
+	return 1;
+}
+
 int CAN_Root_Process_Job(int root_rank, MPI_Comm comm, int nb_proc) {
 
 	MPI_Status main_loop_status;
@@ -308,9 +357,41 @@ int CAN_Root_Process_Job(int root_rank, MPI_Comm comm, int nb_proc) {
 			}
 		}
 	}
-	DHT_put(ROOT_PROCESS, MPI_COMM_WORLD, 550, 300, 42);
+	CAN_Etape_trois(root_rank, nb_proc,comm, 100);
 	CAN_Log_informations(comm,root_rank, nb_proc, (char *)name);
+	CAN_Quitt_overlay( root_rank,nb_proc, comm);
 	return 1;
+}
+
+void CAN_Etape_trois(int com_rank,int nb_proc ,MPI_Comm comm, int nb_total) {
+	int data[10];
+	list pos_list;
+	pair rand_pair, parcour_pair;
+	int rand_int, idx_for_noob = 5;
+	can_data data_res;
+	init_list(&pos_list, sizeof(pair));
+	printf("insertion of %d data, and then try to retrieve the  last and first \n", nb_total);
+	for(int i = 0 ; i < nb_total; i++) {
+		rand_int = rand() % 100;
+		get_random_id(&rand_pair, SIZE_X, SIZE_Y);
+		if(i >= 0 && i < 5) {
+			data[i] = rand_int;
+			list_add_front(&pos_list, &rand_pair);
+		} else if(i >= nb_total - 5) {
+			data[ idx_for_noob ] = rand_int;
+			list_add_front(&pos_list, &rand_pair);
+			idx_for_noob++;
+		}
+		CAN_Attach_new_data(com_rank, 1, comm, &rand_pair,&rand_int, DATA_INT, sizeof(int));
+	}
+	printf("all data are inserted in the CAN \n");
+	CAN_Log_informations(comm,com_rank, nb_proc, "logs/question_3_log");
+	for(int j =  0; j < pos_list.nb_elem ; j++) {
+		list_get_index(&pos_list, j, &parcour_pair);
+		DHT_get(comm, com_rank, parcour_pair.x, parcour_pair.y, &data_res);
+		printf("data numéro : %d  needed : %d , found %d \n", j, data[pos_list.nb_elem - j - 1] ,*(int*)data_res.data);
+		assert(data[pos_list.nb_elem - j - 1]  ==  *(int*)data_res.data); // assertion beacause we are crazy (and overconfident)
+	}
 }
 
 int DHT_put(int root_rank, MPI_Comm comm, unsigned int x, unsigned int y, int data) {
@@ -331,12 +412,10 @@ int DHT_rm(int root_rank, MPI_Comm comm, unsigned int x, unsigned int y) {
 }
 
 
-int DHT_get(MPI_Comm comm, int root_rank, int x, int y) {
+int DHT_get(MPI_Comm comm, int root_rank, int x, int y, can_data * elem) {
 	pair p;
-	can_data s_data;
 	init_pair(&p, x, y);
-	CAN_Fetch_data(comm, root_rank, 1, &p, &s_data);
-	printf("I found value: %d in position(%d, %d)\n", *((int*)s_data.data), x, y);
+	CAN_Fetch_data(comm, root_rank, 1, &p, elem);
 	return 1;
 }
 
@@ -451,7 +530,6 @@ void CAN_REQ_Remove_data(MPI_Status * req_status, MPI_Comm comm, can_node *node)
 			int found = -1;
 			for (int i = 0; i < data_storage->nb_elem; ++i) {
 				list_get_index(data_storage, i, &c);
-				print_one_chunk(&c);
 				if (c.x == x && c.y == y) {
 					found = i;
 					break;
@@ -463,9 +541,11 @@ void CAN_REQ_Remove_data(MPI_Status * req_status, MPI_Comm comm, can_node *node)
 				MPI_Send(&useless, 1, MPI_UNSIGNED, origin_rank, ACK, comm);
 			} else {
 				printf("this is highly impossible \n");
+				MPI_Send(&useless, 1, MPI_UNSIGNED, origin_rank, ACK, comm);
 			}
 		} else {
 			printf("this is highly impossible \n");
+			MPI_Send(&useless, 1, MPI_UNSIGNED, origin_rank, ACK, comm);
 		}
 	} else {
 		if(find_neighbour(&(node->land_id), &(node->voisins), &rec_pair, &neighbour_temp_find)) {
@@ -581,7 +661,6 @@ void CAN_REQ_Rec_Neighbours(MPI_Status *req_status, MPI_Comm comm, int com_rank,
 }
 
 int CAN_REQ_Rec_data(MPI_Status *req_status, MPI_Comm comm, int com_rank, can_node *node , int *wait_for) {
-	printf("ready to receive data \n");
 	UNUSED(com_rank);
 	int count;
 	char buffer[MAX_SIZE_BUFFER_CHAR];
@@ -686,12 +765,10 @@ void CAN_REQ_Request_init_split(MPI_Status *req_status, const MPI_Comm comm, con
 	land_buffer[0] = new_land.x; land_buffer[1] = new_land.y;land_buffer[2] = new_land.size_x;land_buffer[3] = new_land.size_y;
 	MPI_Send(&land_buffer[0], 4, MPI_UNSIGNED, req_status->MPI_SOURCE, REQUEST_RECEIVE_LAND, comm);
 	CAN_Send_neighbour_list(&temp_voisins,RES_INIT_NEIGHBOUR , req_status->MPI_SOURCE, comm);
-	printf("send neighbour ok ! \n");
 	CAN_Send_data_update(&data_to_send, RES_INIT_DATA, req_status->MPI_SOURCE ,comm);
 
 	list_clear(&temp_voisins, free_neighbour_cb);
 	list_clear(&data_to_send, free_chunk_cb);
-	printf("sortie de split land gnagnaggna \n");
 	(*wait_for) = MPI_ANY_SOURCE;
 }
 
@@ -780,17 +857,31 @@ int CAN_Node_Job(int com_rank, MPI_Comm comm) {
 				// traitement
 				//void CAN_REQ_Fetch_data(MPI_Status req_status ,MPI_Comm comm,int com_rank ,const land *land_id, const list * voisins) {
 				CAN_REQ_Fetch_data(&main_loop_status , comm, com_rank ,&node);
+			} else if(main_loop_tag == SEND_ORDER_QUIT) {
+				// traitement
+				//void CAN_REQ_Fetch_data(MPI_Status req_status ,MPI_Comm comm,int com_rank ,const land *land_id, const list * voisins) {
+				break;
 			}
+
 
 			else   {
 				printf("unknow tag \n");
 			}
 		}
 	}
+	list_clear(&(node.data_storage), free_chunk_cb);
+	list_clear(&(node.voisins), free_neighbour_cb);
+	printf("[ %d ] quit \n", com_rank);
 	return 1;
 }
 
-
+void CAN_Quitt_overlay( int root,int nb_proc, MPI_Comm comm) {
+	int ack;
+	for(int i = 0 ; i < nb_proc; i++) {
+		if(i == ROOT_PROCESS ) continue;
+		MPI_Send(&ack, 1, MPI_INT, i, SEND_ORDER_QUIT, comm);
+	}
+}
 
 void free_dummy(void *elem) {UNUSED(elem);}
 
@@ -834,6 +925,20 @@ void chunks_to_buffer(const list *list, char buffer[MAX_SIZE_BUFFER_CHAR],unsign
 	*char_size = idx;
 }
 
+void CAN_shuffle_insert(int data_type, int nb_elem, int self_rank, MPI_Comm comm) {
+	UNUSED(data_type);
+	pair temp ;
+	can_data data;
+	int i_rand;
+	for(int i = 0; i < nb_elem; i ++) {
+		get_random_id(&temp, SIZE_X, SIZE_Y);
+		i_rand = rand() % 1000;
+		init_data(&data, sizeof(unsigned int), DATA_INT, &i_rand );
+		CAN_Attach_new_data(self_rank, 1,comm,&temp ,&i_rand , DATA_INT, sizeof(unsigned int) );
+		free_can_data_(&data);
+	}
+}
+
 void buffer_to_chunk(list *list, const char buffer[MAX_SIZE_BUFFER_CHAR]) {
 	chunk temp;
 	unsigned int x, y, size, elem_type;
@@ -871,8 +976,6 @@ int CAN_Send_data_update(const list *list, int mpi_tag, int mpi_destinataire,  M
 	unsigned int size;
 	chunks_to_buffer(list, buffer, &size);
 	MPI_Send(&buffer[0],size, MPI_CHAR, mpi_destinataire, mpi_tag, comm);
-	printf("attend  ack CAN_Send_data_update \n");
 	MPI_Recv(&size, 4, MPI_UNSIGNED, mpi_destinataire, ACK, comm, MPI_STATUS_IGNORE);
-	printf("recu ack \n");
 	return 1;
 }

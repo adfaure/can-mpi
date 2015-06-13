@@ -30,9 +30,7 @@ int CAN_Send_neighbour_list(const list *l, int mpi_tag, int mpi_destinataire,  M
 	unsigned int buffer[MAX_SIZE_BUFFER],  size = l->nb_elem * (sizeof(neighbour) / sizeof(unsigned int));
     neighbour_to_buffer(l,  buffer);
     MPI_Send(&buffer[0],  size, MPI_UNSIGNED, mpi_destinataire,  mpi_tag,  comm);
-    printf("attend  ack CAN_Send_neighbour \n");
     MPI_Recv(&nothing, 1, MPI_UNSIGNED, mpi_destinataire, 78, comm, &status); // ACK == 78
-    printf("recu ack \n");
     return 1;
 }
 
@@ -569,8 +567,8 @@ void log_factory(FILE *f,  const void *data,  int CODE,  int from) {
     fflush(f);
 }
 
-void create_svg_logs(const char* path,const int size_x, const int size_y ,const list *list_lands, const list * data) {
-	int mult = 4;
+void create_svg_logs(const char* path,const int size_x, const int size_y ,const list *list_lands, const list * data, const list *froms) {
+	int mult = 4; int from;
     FILE *f = fopen(path, "w+");
     if(!f) {
         fprintf(stderr, "erreur lors de l'ouverture du fichier : %s", path);
@@ -596,10 +594,10 @@ void create_svg_logs(const char* path,const int size_x, const int size_y ,const 
         fprintf(f, "%d", (list_lands->nb_elem - i));
         fprintf(f, "</text>\n");
     }
-    list_apply(data, print_pair_cb);
     for(int i = 0 ; i < data->nb_elem; i++) {
         list_get_index(data, i, &temp_paire);
-        fprintf(f, " <circle cx=\"%u\" cy=\"%u\" r=\"10\" fill=\"#%X\" /> \n", temp_paire.x * mult, mult * temp_paire.y , (unsigned int)((i + 1) * color));
+        list_get_index(froms, i, &from);
+        fprintf(f, " <circle cx=\"%u\" cy=\"%u\" r=\"10\" fill=\"#%X\" /> \n", temp_paire.x * mult, mult * temp_paire.y , (unsigned int)((from + 1) * color));
     }
 
     fprintf(f, "</svg> \n");
