@@ -24,6 +24,7 @@
 #define RES_INIT_DATA        57
 #define UPDATE_NEIGBOUR      789
 #define ATTACH_NEW_DATA      888
+#define RM_DATA              4242
 #define FETCH_DATA           999
 #define SEND_FETCH_DATA      111
 #define SEND_DATA_ORDER      222
@@ -51,6 +52,11 @@ typedef struct _can_node {
  *
  */
 void init_can_node(can_node *node);
+
+/**
+ *
+ */
+int CAN_Send_data_update(const list *list, int mpi_tag, int mpi_destinataire, MPI_Comm comm);
 
 /**
  *
@@ -91,6 +97,11 @@ void CAN_Attach_new_data(int self_rank, int first_node, MPI_Comm comm, pair *_pa
 /**
  *
  */
+int CAN_Remove_data(int self_rank, int first_node, MPI_Comm comm, pair * p);
+
+/**
+ *
+ */
 void prompt(int root_rank, MPI_Comm comm, int nb_proc);
 
 /**
@@ -122,7 +133,14 @@ int DHT_put(int root_rank, MPI_Comm comm, unsigned int x, unsigned int y, int da
 /**
  *
  */
+int DHT_rm(int root_rank, MPI_Comm comm, unsigned int x, unsigned int y);
+
+/**
+ *
+ */
 int DHT_get(MPI_Comm comm, int root_rank, int x, int y);
+
+
 
 /**
  *
