@@ -30,6 +30,7 @@
 #define FETCH_DATA           999
 #define SEND_FETCH_DATA      111
 #define SEND_DATA_ORDER      222
+#define SEND_ORDER_QUIT      400
 
 #define DATA_INT 0
 
@@ -239,4 +240,8 @@ void CAN_Etape_trois(int com_rank,int nb_proc, MPI_Comm comm, int nb_total);
  */
 void CAN_shuffle_insert(int data_type, int nb_elem, int self_rank, MPI_Comm comm);
 
+/**
+ * Root process send message to quit
+ */
+void CAN_Quitt_overlay( int root,int nb_proc, MPI_Comm comm);
 #endif

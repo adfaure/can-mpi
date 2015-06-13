@@ -331,6 +331,7 @@ int CAN_Root_Process_Job(int root_rank, MPI_Comm comm, int nb_proc) {
 	}
 	CAN_Etape_trois(root_rank, nb_proc,comm, 100);
 	CAN_Log_informations(comm,root_rank, nb_proc, (char *)name);
+	CAN_Quitt_overlay( root_rank,nb_proc, comm);
 	return 1;
 }
 
@@ -828,17 +829,35 @@ int CAN_Node_Job(int com_rank, MPI_Comm comm) {
 				// traitement
 				//void CAN_REQ_Fetch_data(MPI_Status req_status ,MPI_Comm comm,int com_rank ,const land *land_id, const list * voisins) {
 				CAN_REQ_Fetch_data(&main_loop_status , comm, com_rank ,&node);
+			} else if(main_loop_tag == SEND_ORDER_QUIT) {
+				// traitement
+				//void CAN_REQ_Fetch_data(MPI_Status req_status ,MPI_Comm comm,int com_rank ,const land *land_id, const list * voisins) {
+				CAN_REQ_Send_order_quit(&main_loop_status , comm, com_rank ,&node);
+				break;
 			}
+
 
 			else   {
 				printf("unknow tag \n");
 			}
 		}
 	}
+	printf("[ %d ] quit ", com_rank);
 	return 1;
 }
 
+void CAN_REQ_Send_order_quit(MPI_Status status ,int  comm,int com_rank , can_node node) {
+	list_clear( &node->data_storage, free_chunk_cb);
+	list_clear(&node->voisins, free_neighbour_cb);
+}
 
+void CAN_Quitt_overlay( int root,int nb_proc, MPI_Comm comm) {
+	int ack;
+	for(int i = 0 ; i < nb_proc; i++) {
+		if(i == ROOT_PROCESS ) continue;
+		MPI_Send(&ack, 1, MPI_INT, i, SEND_ORDER_QUIT, comm);
+	}
+}
 
 void free_dummy(void *elem) {UNUSED(elem);}
 
