@@ -124,4 +124,9 @@ int DHT_put(int root_rank, MPI_Comm comm, unsigned int x, unsigned int y, int da
  */
 int DHT_get(MPI_Comm comm, int root_rank, int x, int y);
 
+/**
+ *
+ */
+CAN_shuffle_insert(int data_type, int nb_elem, int self_rank, MPI_Comm comm);
+
 #endif

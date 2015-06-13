@@ -10,8 +10,8 @@
 #include <math.h>
 
 // max sizes
-#define MAX_SIZE_BUFFER 100
-#define MAX_SIZE_BUFFER_CHAR 1000
+#define MAX_SIZE_BUFFER 10000
+#define MAX_SIZE_BUFFER_CHAR 10000
 #define MAX_SIZE_NEIGHBOUR 100
 
 // voisin variables

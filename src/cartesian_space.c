@@ -569,8 +569,8 @@ void log_factory(FILE *f,  const void *data,  int CODE,  int from) {
     fflush(f);
 }
 
-void create_svg_logs(const char* path,const int size_x, const int size_y ,const list *list_lands, const list * data) {
-	int mult = 4;
+void create_svg_logs(const char* path,const int size_x, const int size_y ,const list *list_lands, const list * data, const list *froms) {
+	int mult = 4; int from;
     FILE *f = fopen(path, "w+");
     if(!f) {
         fprintf(stderr, "erreur lors de l'ouverture du fichier : %s", path);
@@ -599,7 +599,8 @@ void create_svg_logs(const char* path,const int size_x, const int size_y ,const 
     list_apply(data, print_pair_cb);
     for(int i = 0 ; i < data->nb_elem; i++) {
         list_get_index(data, i, &temp_paire);
-        fprintf(f, " <circle cx=\"%u\" cy=\"%u\" r=\"10\" fill=\"#%X\" /> \n", temp_paire.x * mult, mult * temp_paire.y , (unsigned int)((i + 1) * color));
+        list_get_index(froms, i, &from);
+        fprintf(f, " <circle cx=\"%u\" cy=\"%u\" r=\"10\" fill=\"#%X\" /> \n", temp_paire.x * mult, mult * temp_paire.y , (unsigned int)((from + 1) * color));
     }
 
     fprintf(f, "</svg> \n");

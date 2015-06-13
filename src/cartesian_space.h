@@ -339,6 +339,6 @@ void log_factory(FILE *f, const void *data, int CODE, int from);
 /**
  *
  */
-void create_svg_logs(const char* path,const int size_x, const int size_y ,const list *list_lands, const list *data);
+void create_svg_logs(const char* path,const int size_x, const int size_y ,const list *list_lands, const list *data, const list * froms );
 
 #endif

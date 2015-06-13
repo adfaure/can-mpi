@@ -1,4 +1,9 @@
 #include "can_communication.h"
+
+#include <mpi.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #define UNUSED(x) (void)(x)
@@ -53,7 +58,7 @@ void CAN_Log_informations(MPI_Comm comm,const int root_rank, const int nb_proc, 
     unsigned int land_buffer[4] , buffer_ui[MAX_SIZE_BUFFER], buffer_simple_int = 0;
     int count, data_count; // wait_array on attend un message d'une source avec un tag
     land temp_land;
-    list  temp_voisins, lands, data_localisations;
+    list  temp_voisins, lands, data_localisations, int_list;
     neighbour temp_voisin;
     pair temp_pair;
     FILE * file;
@@ -81,9 +86,11 @@ void CAN_Log_informations(MPI_Comm comm,const int root_rank, const int nb_proc, 
     init_list(&temp_voisins, sizeof(neighbour));
     init_list(&lands, sizeof(land));
     init_list(&data_localisations, sizeof(pair));
+    init_list(&int_list, sizeof(int));
 
     for(int i = 0; i < nb_proc; i++) {
         if(i != root_rank) {
+        	int from = i;
             MPI_Send(&buffer_simple_int ,1 , MPI_INT, i, SEND_LAND_ORDER, comm);
             MPI_Recv(&(land_buffer[0]), 4, MPI_UNSIGNED, i, ACK, comm, &main_loop_status);
             init_land(&temp_land, land_buffer[0], land_buffer[1] , land_buffer[2], land_buffer[3]);
@@ -111,17 +118,19 @@ void CAN_Log_informations(MPI_Comm comm,const int root_rank, const int nb_proc, 
             for(int j = 0; j < nb_data; j++) {
                 init_pair(&temp_pair, buffer_ui[idx], buffer_ui[idx+1]);
                 list_add_front(&data_localisations, &temp_pair);
+                list_add_front(&int_list, &from);
                 //log_factory(file, &temp_voisin, NEIGHBOUR_LOG, i);
                 idx += 2;
             }
         }
     }
 
-    create_svg_logs(svg_name_file , SIZE_X, SIZE_Y ,&lands, &data_localisations);
+    create_svg_logs(svg_name_file , SIZE_X, SIZE_Y ,&lands, &data_localisations, &int_list);
 
     list_clear(&temp_voisins, free_neighbour_cb);
     list_clear(&lands,  free_land_cb);
     list_clear(&data_localisations, free_land_cb);
+   // list_clear(&int_list, free_land_cb);
 
     free(svg_name_file);
     free(txt_file);
@@ -160,6 +169,7 @@ void prompt(int root_rank, MPI_Comm comm, int nb_proc) {
 	const char str_log[] = "log";
 	const char str_put[] = "put";
 	const char str_get[] = "get";
+	const char str_shuffle[] = "shuffle";
 	unsigned int i = 1;
 
     bool * nodes_inserted = (bool *) malloc(sizeof(bool) * nb_proc);
@@ -173,6 +183,8 @@ void prompt(int root_rank, MPI_Comm comm, int nb_proc) {
 	printf("> log                : add a textual/SVG log on logs/ directory\n");
 	printf("> put <x> <y> <data> : put <data> in position (x, y)\n");
 	printf("> get <x> <y>        : get a data from position (x, y)\n");
+	printf("> shuffle <nb>       : randomly insert <nb> random data \n");
+
     printf("\n");
 
     // init de la première node :s
@@ -231,8 +243,11 @@ void prompt(int root_rank, MPI_Comm comm, int nb_proc) {
 			int x, y;
 			sscanf (user_cmd, "get %d %d", &x, &y);
 			DHT_get(comm, root_rank, x, y);
-		}
-        else {
+		} else if(strncmp(str_shuffle, user_cmd, 7) == 0)  {
+			int x;
+			sscanf (user_cmd, "shuffle %d", &x);
+			CAN_shuffle_insert(DATA_INT , x , root_rank , comm);
+		} else {
             printf("invalid command\n");
             fflush(stdout);
         }
@@ -721,6 +736,19 @@ void chunks_to_buffer(const list *list, char buffer[MAX_SIZE_BUFFER_CHAR],unsign
 		memcpy(&buffer[idx], temp.data_wrapper.data, data_size); idx += data_size;
 	}
 	*char_size = idx;
+}
+
+CAN_shuffle_insert(int data_type, int nb_elem, int self_rank, MPI_Comm comm) {
+	pair temp ;
+	can_data data;
+	int i_rand;
+	for(int i = 0; i < nb_elem; i ++) {
+		get_random_id(&temp, SIZE_X, SIZE_Y);
+		i_rand = rand() % 1000;
+		init_data(&data, sizeof(unsigned int), DATA_INT, &i_rand );
+		CAN_Attach_new_data(self_rank, 1,comm,&temp ,&i_rand , DATA_INT, sizeof(unsigned int) );
+		free_can_data_(&data);
+	}
 }
 
 void buffer_to_chunk(list *list, const char buffer[MAX_SIZE_BUFFER_CHAR]) {
