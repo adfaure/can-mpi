@@ -25,17 +25,24 @@ int CAN_Send_neighbour(const neighbour *neig, int mpi_tag, int mpi_destinataire,
 }
 
 int CAN_Send_neighbour_list(const list *l, int mpi_tag, int mpi_destinataire,  MPI_Comm comm) {
-    unsigned int buffer[MAX_SIZE_BUFFER],  size = l->nb_elem * (sizeof(neighbour) / sizeof(unsigned int));
+    int nothing;
+    MPI_Status status;
+	unsigned int buffer[MAX_SIZE_BUFFER],  size = l->nb_elem * (sizeof(neighbour) / sizeof(unsigned int));
     neighbour_to_buffer(l,  buffer);
     MPI_Send(&buffer[0],  size, MPI_UNSIGNED, mpi_destinataire,  mpi_tag,  comm);
+    printf("attend  ack CAN_Send_neighbour \n");
+    MPI_Recv(&nothing, 1, MPI_UNSIGNED, mpi_destinataire, 78, comm, &status); // ACK == 78
+    printf("recu ack \n");
     return 1;
 }
+
 
 //MPI_Recv(&main_loop_buffer_int[0], count,  MPI_INT,  main_loop_from,  main_loop_tag,  MPI_COMM_WORLD,  &main_loop_status);
 int CAN_Receive_neighbour(neighbour *neig, int mpi_tag, int mpi_src,  MPI_Comm comm ) {
     unsigned int buffer[5],  size =  (sizeof(neighbour) / sizeof(unsigned int));
     MPI_Recv(&buffer[0],  size,  MPI_UNSIGNED, mpi_src,  mpi_tag,  comm,  MPI_STATUS_IGNORE);
     init_neighbour(neig,  buffer[0],  buffer[1],  buffer[2], buffer[3],  buffer[4]);
+
     return 1;
 }
 

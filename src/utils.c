@@ -226,6 +226,11 @@ int list_find(const list * l,const void* params, int(*cb)(const void *elem, cons
     return 0;
 }
 
+void free_chunk_cb(void * elem) {
+	chunk c = *(chunk*) elem;
+	free_can_data_(&(c.data_wrapper));
+}
+
 void free_can_data_(can_data *data) {
 	data->data_type = 0;
 	data->element_size = 0;

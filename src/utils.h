@@ -11,6 +11,7 @@
 
 // max sizes
 #define MAX_SIZE_BUFFER 100
+#define MAX_SIZE_BUFFER_CHAR 1000
 #define MAX_SIZE_NEIGHBOUR 100
 
 // voisin variables
@@ -84,6 +85,10 @@ void get_data( const chunk * chunk,can_data * data_wrapper);
  */
 void print_one_chunk(void * c);
 
+/**
+ *
+ */
+void free_chunk_cb(void * elem);
 
 /**
  * Place dans found le premier élement de la liste l pour lequel le calback cb retourne vrai

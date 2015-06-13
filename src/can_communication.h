@@ -21,6 +21,7 @@
 #define LOCALIZE             321
 #define REQUEST_TO_JOIN      666
 #define RES_INIT_NEIGHBOUR   56
+#define RES_INIT_DATA        57
 #define UPDATE_NEIGBOUR      789
 #define ATTACH_NEW_DATA      888
 #define FETCH_DATA           999
@@ -75,7 +76,7 @@ int CAN_Root_Process_Job(int root_rank, MPI_Comm comm,int nb_proc);
 /**
  *
  */
-int CAN_Root_Process_Job_Insert_One(int root_rank, MPI_Comm comm, int proc_to_insert, int nb_proc);
+int CAN_Root_Process_Job_Insert_One(int root_rank, MPI_Comm comm, int proc_to_insert);
 
 /**
  * job nodes
@@ -95,12 +96,23 @@ void prompt(int root_rank, MPI_Comm comm, int nb_proc);
 /**
  *
  */
-int put(int root_rank, MPI_Comm comm, int nb_proc);
+void chunk_to_buffer(const list* ch, unsigned int buffer[MAX_SIZE_BUFFER]);
 
 /**
  *
  */
-void chunk_to_buffer(const list* ch, unsigned int buffer[MAX_SIZE_BUFFER] );
+void chunks_to_buffer(const list *list, char buffer[MAX_SIZE_BUFFER_CHAR],unsigned int *char_size);
+
+
+/**
+ *
+ */
+void buffer_to_chunk(list *list, const char buffer[MAX_SIZE_BUFFER_CHAR]);
+
+/**
+ *
+ */
+void distribute_data_after_split(const land *land, list *old_list, list *new_list);
 
 /**
  *
