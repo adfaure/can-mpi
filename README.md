@@ -1,3 +1,7 @@
+# Contenue du projet
+vous trouverez dans le dossier :
+.hg  	
+
 # pour builder:
 
     make
