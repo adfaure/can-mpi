@@ -14,7 +14,6 @@
   bottom=18mm,
   bindingoffset=0mm
 }
-
 \usepackage[usenames, dvipsnames]{color}
 
 % \definecolor{azur}{RGB}{0, 127, 255}
@@ -49,6 +48,13 @@
 \usepackage{wrapfig}
 
 \usepackage{listings}
+\lstdefinelanguage{md}{
+    keywords = {
+        make, \#, mpirun
+    },
+    morekeywords = {\#,make,mpirun}
+}
+
 
 \usepackage{float}
 \usepackage{amsmath,amsfonts,amssymb}
@@ -120,5 +126,5 @@ Nous avons souhaité ajouter la possibilité d'ajouter des processus au cours de
 \newpage
 \appendix % début des annexes
 \section{Annexe 1 - README}
-\lstinputlisting[numbers=left, numberstyle=\tiny, stepnumber=1, numbersep=5pt]{../README.md}
+\lstinputlisting[language=md, numbers=left, numberstyle=\tiny, stepnumber=1, numbersep=5pt, breaklines=true, frame=single]{../README.md}
 \end{document}
