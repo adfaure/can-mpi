@@ -1,6 +1,13 @@
-# Contenue du projet
-vous trouverez dans le dossier :
-.hg  	
+#Contenu de l'archive
+* |- .hg/       Le dépot mercurial
+* |- logs/      Le dossier avec les logs des éxécutions
+* |- rapport/   Sources latex du rapport
+* |- src/       Les source du projets
+* |- test/      Les sources des tests unitaires (avec cunit)
+* |- obj/       Les fichiers objets issues de la compilation
+* |- Makefile   Le makefile décris ci-dessous
+* |- README.md  Celui-ci même
+* |- 250logged.tar.gz  Les logs issues d'une éxécution avec 250 processus
 
 # pour builder:
 
@@ -22,6 +29,8 @@ vous trouverez dans le dossier :
     make mpi_can
 
 # execution avec prompt :
+**Attention ! **
+nous n'avons pas géré touts les cas possible. La commande `insert all` ne doit pas être utilisée en même temps que des insertions manuelles
 
     mpirun -np 7 ./mpi_can debug
 
