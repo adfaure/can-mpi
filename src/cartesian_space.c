@@ -518,7 +518,6 @@ void split_land(land *new_land, land *old_land) {
     unsigned int new_x,  new_y,  new_size_x,  new_size_y, odd = 0;
     if(old_land->size_x >= old_land->size_y) {
     	if(old_land->size_x % 2 == 1) {
-    		printf("split d'une zone paire \n");
     		odd = 1;
     	}
         new_x = old_land->x + (old_land->size_x / 2);
@@ -528,7 +527,6 @@ void split_land(land *new_land, land *old_land) {
         old_land->size_x = new_size_x - odd;
     } else {
     	if(old_land->size_y % 2 == 1) {
-    		printf("split d'une zone paire \n");
     		odd = 1;
     	}
         new_x = old_land->x;
