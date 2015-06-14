@@ -1,14 +1,14 @@
-# pour builder et tester:
+# pour builder:
 
     make
 
 
-# Pour builder et executer les tests
+# Pour builder et executer les tests (nécessite la bibliothèque cunit)
 
     make runtest
 
 
-# Pour builder sans executer les tests
+# Pour builder les test sans executer les tests (nécessite la bibliothèque cunit)
 
     make test
 
@@ -16,7 +16,6 @@
 # pour builder l'appli sans executer les tests  :'(
 
     make mpi_can
-
 
 # execution avec prompt :
 

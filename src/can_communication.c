@@ -876,6 +876,7 @@ int CAN_Node_Job(int com_rank, MPI_Comm comm) {
 }
 
 void CAN_Quitt_overlay( int root,int nb_proc, MPI_Comm comm) {
+	UNUSED(root);
 	int ack;
 	for(int i = 0 ; i < nb_proc; i++) {
 		if(i == ROOT_PROCESS ) continue;

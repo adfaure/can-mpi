@@ -1,6 +1,6 @@
 CFLAGS=-std=gnu11 -Wall -Wextra -pedantic -Wstrict-aliasing -g
 
-all: mpi_can runtest
+all: mpi_can
 
 mpi_can: obj/utils.o obj/can_communication.o obj/cartesian_space.o
 	mpicc ${CFLAGS} obj/*.o src/mpi_can.c -o mpi_can -lm
