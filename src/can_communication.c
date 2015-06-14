@@ -204,7 +204,7 @@ void prompt(int root_rank, MPI_Comm comm, int nb_proc) {
 		nodes_set(nodes_inserted, nb_proc, 1);
 	}
 	while (1) {
-		usleep(1000);
+		//usleep(1000);
 		printf("> ");
 		fflush(stdout);
 		fgets (user_cmd, MAX_LEN, stdin);
