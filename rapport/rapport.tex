@@ -1,7 +1,7 @@
 \documentclass[a4paper, 11pt, french]{article}
 %\usepackage{babel} % sans option, babel choisit la langue en fonction de celle définie dans la classe du document
 \usepackage[utf8]{inputenc}
-%\usepackage[T1]{fontenc}
+\usepackage[T1]{fontenc}
 %\usepackage{enumitem}
 %consigne a respecter:
 \usepackage{geometry}
@@ -10,8 +10,8 @@
   total={210mm,297mm},
   left=20mm,
   right=20mm,
-  top=20mm,
-  bottom=20mm,
+  top=18mm,
+  bottom=18mm,
   bindingoffset=0mm
 }
 
@@ -41,8 +41,8 @@
 %\BeforeBeginEnvironment{minted}{\begin{mdframed}}
 %\AfterEndEnvironment{minted}{\end{mdframed}}
 
-\usepackage{setspace}
-\onehalfspacing
+%\usepackage{setspace}
+%\onehalfspacing
 
 %\usepackage[babel=true]{csquotes} % csquotes va utiliser la langue définie dans babel
 \usepackage{graphicx}
@@ -55,9 +55,9 @@
 
 \usepackage{titlesec}
 
-\titleformat*{\section}{\Large\bfseries\sffamily\color{pink}}
-\titleformat*{\subsection}{\normalsize\bfseries\sffamily\color{green}}
-\titleformat*{\subsubsection}{\normalsize\bfseries\sffamily\color{blue}}
+%\titleformat*{\section}{\Large\bfseries\sffamily\color{pink}}
+%\titleformat*{\subsection}{\normalsize\bfseries\sffamily\color{green}}
+%\titleformat*{\subsubsection}{\normalsize\bfseries\sffamily\color{blue}}
 
 
 \title{\textbf{MIF32 - Compte-Rendu du projet CAN}}
@@ -70,12 +70,13 @@
     \maketitle
 
 \begin{abstract}
-Nous présentons une implémentation en C/MPI d'une DHT utilisant le protocole CAN. Nos choix d'implémentation permettent une recherche efficace dans la DHT depuis n'importe quel noeud. Nous offrons aussi des représentations graphiques en SVG et textuelles de l'état de la DHT ainsi qu'une couverture de nos fonctions le splus critiques grâce à des tests unitaires. Ces représentations sont générées automatiquements lors de l'execution de la DHT, ou à la demande si l'on utilise l'interface en ligne de commande.
+Nous présentons une implémentation en C/MPI d'une DHT utilisant le protocole CAN. Nos choix d'implémentation permettent une recherche efficace dans la DHT depuis n'importe quel noeud. Nous offrons aussi des représentations graphiques en SVG et textuelles de l'état de la DHT ainsi qu'une couverture de nos fonctions les plus critiques grâce à des tests unitaires. Ces représentations sont générées automatiquements lors de l'exécution de la DHT, ou à la demande si l'on utilise l'interface en ligne de commande.
+URL du projet : \textit{\texttt{https://bitbucket.org/OldDadou/can}}
 \end{abstract}
 \section{Fonctionalités disponibles}
 Les cinq étapes décrites dans le sujet on été respectées. A l'exception de la suppression des noeuds, jugée trop complexe lors des séances de TP. Nous proposons cependant une solution à la fin de ce rapport.
 \subsection{Etape 1 : Création du réseau et insertion de noeud}
-Lors de l'execution de notre programme, le nombre de processus est statique, défini lors de l'appel à la commande \textit{mpirun}. Le rang du processus root est défini par une macro. Celui-çi nous servira de coordinateur, et ne fera pas partie de la DHT. Le coordinateur demandera successivement aux noeuds de s'insérer. Lors d'une insertion, l'algorithme décrit dans le sujet a été respecté, de plus, si l'ancien noeud contient des données, il les transmettra au nouvel arrivant. Le nouveau noeud se verra recevoir son voisinage communiqué par l'ancien noeud. De plus celui-çi enverra à chacun de ses nouveaux voisins sa nouvelle frontière afin qu'ils se mettent à jours.
+Lors de l'exécution de notre programme, le nombre de processus est statique, défini lors de l'appel à la commande \textit{mpirun}. Le rang du processus root est défini par une macro. Celui-çi nous servira de coordinateur, et ne fera pas partie de la DHT. Le coordinateur demandera successivement aux noeuds de s'insérer. Lors d'une insertion, l'algorithme décrit dans le sujet a été respecté, de plus, si l'ancien noeud contient des données, il les transmettra au nouvel arrivant. Le nouveau noeud se verra recevoir son voisinage communiqué par l'ancien noeud. De plus celui-çi enverra à chacun de ses nouveaux voisins sa nouvelle frontière afin qu'ils se mettent à jours.
 \subsection{Etape 2 : Insertion de données}
 Via le coordinateur (ou depuis n'importe quel noeud, car les méthodes sont génériques), il est possible d'insérer des données à une position \textit{(x, y)} dans l'espace cartésien. Même si dans notre projet, nous n'insérons que des int, l'implémentation sous-jacente permet de définir le type des données à insérer via un système de TAG et en spécifiant la taille. Les données seront acheminées, via notre algorithme de routage, au sein de l'overlay, sous forme d'un tableau d'octet.
 \subsection{Etape 3 : Recherche et lecture de données}
@@ -93,22 +94,30 @@ L'une est dédiée à la coordination (ajout, suppression de noeuds) et utilisé
 \subsection{Communications}
 Les processus non-coordinateurs seront en attente, en premier lieu de l'ordre de s'insérer du coordinateur. Ils attendent ensuite de recevoir et de traiter une requête. Les noeuds seront en mesure, lors d'une réception, de traiter les requêtes grâce au système de tag proposé par MPI.
 \subsection{Journalisation et debug}
-La complexité du code augmentant, nous avons mis en place plusieurs systèmes afin de comprendre le comportement de notre logiciel. En premier lieu, nous avons mis en place la journalisation des manipulations de l'overlay via le coordinateur. Le coordinateur dispose de routine afin de demander des informations aux noeuds de l'overlay. Les informations récupérées sont stockées dans un répertoire de logs sous deux formes. Une forme textuelle, et une forme graphique au format SVG. Nous utilisions beaucoup l'"aléatoire", la reproductibilité était donc impossible, donc nous avons mis en place un système de seed paramétrable. Celle-çi est automatiquement journalisée dans le fichier \textit{logs/global.txt} et peut être spécifiée lors de l'execution du programme. De plus nous pouvons spécifier que nous souhaitons lancer le programme et manipuler la DHT grace à un prompt.
+La complexité du code augmentant, nous avons mis en place plusieurs systèmes afin de comprendre le comportement de notre logiciel. En premier lieu, nous avons mis en place la journalisation des manipulations de l'overlay via le coordinateur. Le coordinateur dispose de routine afin de demander des informations aux noeuds de l'overlay. Les informations récupérées sont stockées dans un répertoire de logs sous deux formes. Une forme textuelle, et une forme graphique au format SVG. Nous utilisions beaucoup l'"aléatoire", la reproductibilité était donc impossible, donc nous avons mis en place un système de seed paramétrable. Celle-çi est automatiquement journalisée dans le fichier \textit{logs/global.txt} et peut être spécifiée lors de l'exécution du programme. De plus nous pouvons spécifier que nous souhaitons lancer le programme et manipuler la DHT grace à un prompt.
 
 \section {Les structures de données mises en oeuvre}
 Chaque noeud possède localement plusieurs données. Une liste de frontières représentant le voisinage proche du noeud, ainsi qu'une liste capable de stocker les données dont le noeud est responsable. L'espace dont le noeud est reponsable est défini par une structure représentant un rectangle.
 
 \section{Algorithme de routage}
-Afin de localiser un noeud dans l'overlay, nous envoyons une requete composée de la source (comm_rank de l'initiateur) ainsi que de la destination (coordonnées x,y). la procédure se déroule en deux étapes. Le noeud récepteur vérifiera si les coordonnées appartiennent à la zone dont il est responsable, si c'est le cas, il sera alors en mesure de répondre à la requête grâce au rang de l'initiateur présent dans la requête. Autrement si les coordonnées fournis n'appartiennent pas à la zone du noeud, alors il déterminera, parmis ses voisins, le prochain saut.
+Afin de localiser un noeud dans l'overlay, nous envoyons une requete composée de la source (\textit{comm\_rank} de l'initiateur) ainsi que de la destination (coordonnées x,y). la procédure se déroule en deux étapes. Le noeud récepteur vérifiera si les coordonnées appartiennent à la zone dont il est responsable, si c'est le cas, il sera alors en mesure de répondre à la requête grâce au rang de l'initiateur présent dans la requête. Autrement si les coordonnées fournis n'appartiennent pas à la zone du noeud, alors il déterminera, parmis ses voisins, le prochain saut.
 Cet algorithme, en apparence simple, n'a été possible que grâce au maintient permanent de la cohérence de la DHT. En effet, lors de l'insertion d'un nouveau noeud, il est primordial de mettre à jour le voisinage des noeuds, ceci à nécessité une bonne maitrise des communications.
 
 \section{Pour aller plus loin}
 \subsection {Optimisation}
-Les communications MPI utilisant de l'attente active. Nous utilisons la fonction \textit{MPI_Iprobe} couplée à un \textit{usleep} afin de réduire la consommation de ressource engendrée par cette attente active.
+Les communications MPI utilisant de l'attente active. Nous utilisons la fonction \textit{MPI\_Iprobe} couplée à un \textit{usleep} afin de réduire la consommation de ressource engendrée par cette attente active.
 
-\subsection {Ajout dynamique de processus lors de l'execution}
-Nous avons souhaité ajouter la possibilité d'ajouter des processus au cours de l'execution. Nous avons effectué des essais en utilisant \textit{MPI\_Spawn}, puis \textit{MPI\_Intercomm\_merge} pour obtenir un communicateur intra contenant tous les processus ainsi que le nouveaux processus. Malheureusement, il n'est pas possible de re-merger ce communicateur \footnote{Nous avons du abandonner cette idée suite à la lecture de ce topic de la mailling-list d'openMPI - \texttt{https://www.open-mpi.org/community/lists/users/2007/10/4312.php}} lors de spawn successifs, car \textit{MPI\_Intercomm\_merge} est une routine collective et donc chaque processus précédément spawné doit participer au prochain merge.
+\subsection {Ajout dynamique de processus lors de l'exécution}
+Nous avons souhaité ajouter la possibilité d'ajouter des processus au cours de l'exécution. Nous avons effectué des essais en utilisant \textit{MPI\_Spawn}, puis \textit{MPI\_Intercomm\_merge} pour obtenir un communicateur intra contenant tous les processus ainsi que le nouveaux processus. Malheureusement, il n'est pas possible de re-merger ce communicateur \footnote{Nous avons du abandonner cette idée suite à la lecture de ce topic de la mailling-list d'openMPI - \texttt{https://www.open-mpi.org/community/lists/users/2007/10/4312.php}} lors de spawn successifs, car \textit{MPI\_Intercomm\_merge} est une routine collective et donc chaque processus précédément spawné doit participer au prochain merge.
 
+\begin{figure}[h]
+  \centering
+      \includegraphics[width=0.35\textwidth]{oJ6bMDc.png}
+  \caption{25 Processus - 100 datas}
+  \label{}
+\end{figure}
+
+\newpage
 \appendix % début des annexes
 \section{Annexe 1 - README}
 \lstinputlisting[numbers=left, numberstyle=\tiny, stepnumber=1, numbersep=5pt]{../README.md}
